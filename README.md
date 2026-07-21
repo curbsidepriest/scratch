@@ -31,6 +31,9 @@ npm run dev            # http://localhost:3000
 - `npm run db:studio` — open Prisma Studio
 - `npm run shots` — Playwright visual + behavioral checks (needs `npm run dev`
   running); writes images to `screenshots/` (gitignored)
+- `npm run ranker:check` — deterministic Ranker-stub checks (shape + rarity)
+- `npm run sparks:clear` — clear derived through-lines (not snippets), for a
+  clean spark demo
 
 ## Notes / v1 decisions
 
@@ -47,6 +50,6 @@ npm run dev            # http://localhost:3000
 - [x] Phase 1 — backend, DB schema + migration, seed, snippets API
 - [x] Phase 2 — Scratchpad home surface
 - [x] Phase 3 — Timed Dump mode
-- [ ] Phase 4 — Ranker stub (the "spark")
+- [x] Phase 4 — Ranker stub (the "spark")
 - [ ] Phase 5 — Promotion → Project
 - [ ] Phase 6 — Project modes (Filter / Architect / Editor)

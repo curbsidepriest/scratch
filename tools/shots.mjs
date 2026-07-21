@@ -28,6 +28,28 @@ check(
   `${await page.locator("article").count()} cards`,
 );
 
+// --- Spark (Phase 4) ---
+const spark = page.locator("aside");
+await spark.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+check("spark surfaces on the seeded thread", (await spark.count()) === 1);
+check(
+  "spark names territory, not a title",
+  (await page.getByText(/setting .* against|circling|coming back to|pulling at/i).count()) >= 1,
+);
+check(
+  "spark shows evidence pointing at the writer's words",
+  (await spark.locator("li").count()) >= 1,
+  `${await spark.locator("li").count()} evidence item(s)`,
+);
+if (await spark.count()) {
+  await spark.screenshot({ path: `${OUT}/05-spark.png` });
+}
+
+// Dismiss ("Not now") should make it disappear.
+await page.getByRole("button", { name: "Not now" }).click();
+await page.waitForTimeout(700);
+check("dismiss removes the spark", (await page.locator("aside").count()) === 0);
+
 // --- Scratchpad (dark) ---
 const dark = await browser.newPage({
   viewport: { width: 1100, height: 850 },

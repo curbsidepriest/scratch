@@ -1,14 +1,22 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence } from "motion/react";
 import Link from "next/link";
-import { createSnippet, fetchSnippets } from "@/lib/api";
+import {
+  createSnippet,
+  dismissThroughline,
+  fetchSnippets,
+  fetchSpark,
+} from "@/lib/api";
 import type { SnippetDTO } from "@/lib/types";
 import { wordCount } from "@/lib/domain";
 import { Composer } from "./Composer";
 import { SnippetList } from "./SnippetList";
+import { Spark } from "./Spark";
 
 const SNIPPETS_KEY = ["snippets"];
+const SPARK_KEY = ["spark"];
 
 export function Scratchpad() {
   const queryClient = useQueryClient();
@@ -16,6 +24,23 @@ export function Scratchpad() {
   const { data: snippets = [], isLoading } = useQuery({
     queryKey: SNIPPETS_KEY,
     queryFn: fetchSnippets,
+  });
+
+  // The Ranker reads continuously; we re-check after each capture (spec §5).
+  const { data: spark } = useQuery({
+    queryKey: SPARK_KEY,
+    queryFn: fetchSpark,
+  });
+
+  const dismiss = useMutation({
+    mutationFn: (id: string) => dismissThroughline(id),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: SPARK_KEY });
+      queryClient.setQueryData(SPARK_KEY, null);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: SPARK_KEY });
+    },
   });
 
   const capture = useMutation({
@@ -47,6 +72,7 @@ export function Scratchpad() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: SNIPPETS_KEY });
+      queryClient.invalidateQueries({ queryKey: SPARK_KEY });
     },
   });
 
@@ -65,6 +91,18 @@ export function Scratchpad() {
       <section className="mb-10">
         <Composer onCapture={(content) => capture.mutate(content)} />
       </section>
+
+      <AnimatePresence>
+        {spark && (
+          <div className="mb-10">
+            <Spark
+              spark={spark}
+              onDismiss={() => dismiss.mutate(spark.id)}
+              dismissing={dismiss.isPending}
+            />
+          </div>
+        )}
+      </AnimatePresence>
 
       <div className="mb-6 h-px w-full bg-border" />
 
