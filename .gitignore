@@ -45,3 +45,9 @@ next-env.d.ts
 # local sqlite database (regenerate with `prisma migrate dev` + `npm run db:seed`)
 *.db
 *.db-journal
+
+# prisma init editor-agent scaffolding (not wanted)
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
