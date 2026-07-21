@@ -51,5 +51,5 @@ npm run dev            # http://localhost:3000
 - [x] Phase 2 — Scratchpad home surface
 - [x] Phase 3 — Timed Dump mode
 - [x] Phase 4 — Ranker stub (the "spark")
-- [ ] Phase 5 — Promotion → Project
+- [x] Phase 5 — Promotion → Project
 - [ ] Phase 6 — Project modes (Filter / Architect / Editor)

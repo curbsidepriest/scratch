@@ -28,10 +28,27 @@ export interface RankerCandidate {
   evidence: RankerEvidence[];
 }
 
+/** A relevance judgement for the promotion pull-in (spec §6). */
+export interface RankerRelevance {
+  snippetId: string;
+  suggested: boolean;
+  reason: string;
+}
+
 export interface RankerService {
   /**
    * Read the accumulated snippets and *occasionally* return a through-line.
    * Returns null most of the time — the spark is rare, and that is correct.
    */
   evaluate(snippets: RankerSnippet[]): Promise<RankerCandidate | null>;
+
+  /**
+   * Given the snippets a through-line was anchored to, judge which of the
+   * remaining snippets relate to it — the stubbed relevance ranking that seeds
+   * the promotion pull-in. The user always curates the final set.
+   */
+  rankRelevance(
+    anchorSnippetIds: string[],
+    snippets: RankerSnippet[],
+  ): Promise<RankerRelevance[]>;
 }

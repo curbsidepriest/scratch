@@ -1,6 +1,7 @@
 import type {
   RankerCandidate,
   RankerEvidence,
+  RankerRelevance,
   RankerService,
   RankerSnippet,
 } from "./types";
@@ -176,5 +177,44 @@ export class StubRankerService implements RankerService {
     push(first.id, "This is where the thread first shows up.");
 
     return { phrase, evidence };
+  }
+
+  // Relevance for the promotion pull-in (spec §6). Anchored on the snippets the
+  // spark pointed at: a snippet is suggested if it shares enough salient
+  // language with that anchor. Stubbed and deliberately simple — the user
+  // curates the final set, so over/under-inclusion is cheap.
+  async rankRelevance(
+    anchorSnippetIds: string[],
+    snippets: RankerSnippet[],
+  ): Promise<RankerRelevance[]> {
+    const anchors = new Set(anchorSnippetIds);
+    const anchorTerms = new Set<string>();
+    for (const s of snippets) {
+      if (anchors.has(s.id)) {
+        for (const t of tokens(s.content)) anchorTerms.add(t);
+      }
+    }
+
+    return snippets.map((s) => {
+      if (anchors.has(s.id)) {
+        return {
+          snippetId: s.id,
+          suggested: true,
+          reason: "the spark pointed here",
+        };
+      }
+      const shared = new Set(
+        tokens(s.content).filter((t) => anchorTerms.has(t)),
+      );
+      // Two shared salient terms is a meaningful echo; one is likely noise.
+      const suggested = shared.size >= 2;
+      return {
+        snippetId: s.id,
+        suggested,
+        reason: suggested
+          ? `shares language with the thread (${[...shared].slice(0, 3).join(", ")})`
+          : "doesn't obviously relate",
+      };
+    });
   }
 }

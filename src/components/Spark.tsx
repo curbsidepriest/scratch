@@ -10,6 +10,7 @@ function excerpt(text: string, max = 90): string {
 
 interface SparkProps {
   spark: SparkDTO;
+  onDevelop: () => void;
   onDismiss: () => void;
   dismissing?: boolean;
 }
@@ -19,7 +20,12 @@ interface SparkProps {
  * visitor: quiet, distinct, tentative. It names territory and points at the
  * writer's own words — it never praises or prescribes.
  */
-export function Spark({ spark, onDismiss, dismissing = false }: SparkProps) {
+export function Spark({
+  spark,
+  onDevelop,
+  onDismiss,
+  dismissing = false,
+}: SparkProps) {
   return (
     <motion.aside
       initial={{ opacity: 0, y: -6 }}
@@ -49,8 +55,13 @@ export function Spark({ spark, onDismiss, dismissing = false }: SparkProps) {
           ))}
         </ul>
 
-        <div className="mt-4 flex items-center gap-4">
-          {/* "Develop this →" (promotion) arrives in Phase 5. */}
+        <div className="mt-5 flex items-center gap-4">
+          <button
+            onClick={onDevelop}
+            className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          >
+            Develop this →
+          </button>
           <button
             onClick={onDismiss}
             disabled={dismissing}

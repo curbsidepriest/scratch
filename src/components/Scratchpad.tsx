@@ -3,23 +3,30 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   createSnippet,
   dismissThroughline,
   fetchSnippets,
   fetchSpark,
 } from "@/lib/api";
-import type { SnippetDTO } from "@/lib/types";
+import type { SnippetDTO, SparkDTO } from "@/lib/types";
 import { wordCount } from "@/lib/domain";
 import { Composer } from "./Composer";
 import { SnippetList } from "./SnippetList";
 import { Spark } from "./Spark";
+import { PromotionOverlay } from "./PromotionOverlay";
 
 const SNIPPETS_KEY = ["snippets"];
 const SPARK_KEY = ["spark"];
 
 export function Scratchpad() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+
+  // The through-line currently being promoted (drives the overlay).
+  const [promoting, setPromoting] = useState<SparkDTO | null>(null);
 
   const { data: snippets = [], isLoading } = useQuery({
     queryKey: SNIPPETS_KEY,
@@ -97,10 +104,25 @@ export function Scratchpad() {
           <div className="mb-10">
             <Spark
               spark={spark}
+              onDevelop={() => setPromoting(spark)}
               onDismiss={() => dismiss.mutate(spark.id)}
               dismissing={dismiss.isPending}
             />
           </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {promoting && (
+          <PromotionOverlay
+            throughlineId={promoting.id}
+            phrase={promoting.phrase}
+            onCancel={() => setPromoting(null)}
+            onPromoted={(projectId) => {
+              queryClient.invalidateQueries({ queryKey: SPARK_KEY });
+              router.push(`/project/${projectId}`);
+            }}
+          />
         )}
       </AnimatePresence>
 

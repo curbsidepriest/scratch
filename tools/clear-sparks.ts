@@ -1,6 +1,7 @@
-// Dev helper: clear derived through-lines (and their evidence, via cascade) so
-// the spark can be demoed/verified from a clean state. Does NOT touch snippets —
-// through-lines are derived, not user writing, so this respects §9.2.
+// Dev helper: clear derived state — projects (and their project-snippet refs,
+// blocks, lint flags via cascade) and through-lines (and their evidence). So
+// the spark/promotion flow can be demoed/verified from a clean state. Does NOT
+// touch snippets — only derived data — so this respects §9.2.
 // Run: npx tsx tools/clear-sparks.ts
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
@@ -11,8 +12,12 @@ const adapter = new PrismaBetterSqlite3({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const { count } = await prisma.throughline.deleteMany({});
-  console.log(`Cleared ${count} through-line(s).`);
+  // Projects first — a promoted through-line is FK-referenced by its project.
+  const projects = await prisma.project.deleteMany({});
+  const throughlines = await prisma.throughline.deleteMany({});
+  console.log(
+    `Cleared ${projects.count} project(s) and ${throughlines.count} through-line(s).`,
+  );
 }
 
 main()

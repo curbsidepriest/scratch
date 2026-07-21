@@ -22,3 +22,27 @@ export interface SparkDTO {
   createdAt: string;
   evidence: SparkEvidenceDTO[];
 }
+
+/** A snippet plus its stubbed relevance to a through-line, for promotion. */
+export interface RelevantSnippetDTO extends SnippetDTO {
+  suggested: boolean;
+  reason: string;
+}
+
+export interface RelevantResponse {
+  throughline: { id: string; phrase: string };
+  snippets: RelevantSnippetDTO[];
+}
+
+export interface ProjectSnippetDTO {
+  included: boolean;
+  snippet: SnippetDTO;
+}
+
+export interface ProjectDTO {
+  id: string;
+  title: string | null;
+  createdAt: string;
+  throughline: { id: string; phrase: string };
+  snippets: ProjectSnippetDTO[];
+}
