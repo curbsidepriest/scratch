@@ -43,7 +43,7 @@ npm run dev            # http://localhost:3000
 ## Build status
 
 - [x] Phase 1 — backend, DB schema + migration, seed, snippets API
-- [ ] Phase 2 — Scratchpad home surface
+- [x] Phase 2 — Scratchpad home surface
 - [ ] Phase 3 — Timed Dump mode
 - [ ] Phase 4 — Ranker stub (the "spark")
 - [ ] Phase 5 — Promotion → Project
