@@ -29,6 +29,8 @@ npm run dev            # http://localhost:3000
 - `npm run db:seed` — seed fake snippets (no-op if snippets already exist)
 - `npm run db:reset` — drop, re-migrate, and re-seed the local db
 - `npm run db:studio` — open Prisma Studio
+- `npm run shots` — Playwright visual + behavioral checks (needs `npm run dev`
+  running); writes images to `screenshots/` (gitignored)
 
 ## Notes / v1 decisions
 
@@ -44,7 +46,7 @@ npm run dev            # http://localhost:3000
 
 - [x] Phase 1 — backend, DB schema + migration, seed, snippets API
 - [x] Phase 2 — Scratchpad home surface
-- [ ] Phase 3 — Timed Dump mode
+- [x] Phase 3 — Timed Dump mode
 - [ ] Phase 4 — Ranker stub (the "spark")
 - [ ] Phase 5 — Promotion → Project
 - [ ] Phase 6 — Project modes (Filter / Architect / Editor)

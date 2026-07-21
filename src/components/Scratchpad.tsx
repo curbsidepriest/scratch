@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { createSnippet, fetchSnippets } from "@/lib/api";
 import type { SnippetDTO } from "@/lib/types";
 import { wordCount } from "@/lib/domain";
@@ -51,8 +52,14 @@ export function Scratchpad() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-10">
-      <header className="mb-8">
+      <header className="mb-8 flex items-center justify-between">
         <h1 className="text-sm font-medium tracking-wide text-muted">Scratch</h1>
+        <Link
+          href="/dump"
+          className="text-xs text-faint transition-colors hover:text-foreground"
+        >
+          Timed dump →
+        </Link>
       </header>
 
       <section className="mb-10">
