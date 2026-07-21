@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scratch
 
-## Getting Started
+A writing tool that helps you think, and never writes for you. See
+[`docs/spec.md`](docs/spec.md) for the full product spec and the non-negotiable
+invariants (§9).
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + **TypeScript** — one codebase, one dev command
+- **Prisma 7** + **SQLite** (via the `better-sqlite3` driver adapter) — real
+  schema, real migrations
+- Route Handlers under `src/app/api/*` for the backend
+
+All LLM behaviour will live behind a swappable service interface (stubbed for
+v1); no code path can generate pasteable prose.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install            # also runs `prisma generate` via postinstall
+npx prisma migrate dev # create the local dev.db from migrations
+npm run db:seed        # seed a handful of fake snippets
+npm run dev            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `npm run dev` / `build` / `start` — Next.js
+- `npm run db:seed` — seed fake snippets (no-op if snippets already exist)
+- `npm run db:reset` — drop, re-migrate, and re-seed the local db
+- `npm run db:studio` — open Prisma Studio
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Notes / v1 decisions
 
-## Learn More
+- **SQLite has no enums**, so `sourceMode`, `origin`, `status`, and `kind` are
+  `String` columns with allowed values defined in `src/lib/domain.ts` and
+  enforced at the API boundary. They can become real Prisma enums on a future
+  Postgres migration.
+- **The local `dev.db` is gitignored**; recreate it with `migrate dev` + seed.
+- **Snippets are never deleted** — the snippets API has no DELETE handler by
+  design (spec §9.2).
 
-To learn more about Next.js, take a look at the following resources:
+## Build status
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [x] Phase 1 — backend, DB schema + migration, seed, snippets API
+- [ ] Phase 2 — Scratchpad home surface
+- [ ] Phase 3 — Timed Dump mode
+- [ ] Phase 4 — Ranker stub (the "spark")
+- [ ] Phase 5 — Promotion → Project
+- [ ] Phase 6 — Project modes (Filter / Architect / Editor)

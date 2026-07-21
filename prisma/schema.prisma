@@ -1,0 +1,136 @@
+// Scratch — data model (spec §7)
+//
+// NOTE ON ENUMS: SQLite does not support Prisma enums, so the enum-like fields
+// (sourceMode, origin, status, kind) are modelled as String with a documented
+// set of allowed values, enforced in the validation layer (see src/lib/domain).
+// When/if we migrate to Postgres, these can become real Prisma enums.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// A chunk of text the user wrote. Lives globally in the Scratchpad, forever.
+/// Never hard-deleted; only ever shared into projects by reference.
+model Snippet {
+  id         String   @id @default(cuid())
+  content    String
+  createdAt  DateTime @default(now()) @map("created_at")
+  sourceMode String   @map("source_mode") // "dump" | "freewrite" | "quick_capture"
+  wordCount  Int      @map("word_count")
+
+  // relations
+  evidence        Evidence[]
+  projectSnippets ProjectSnippet[]
+  filledBlocks    Block[] // blocks this snippet was dragged in to fill
+
+  @@index([createdAt])
+  @@map("snippets")
+}
+
+/// A candidate idea surfaced by the Ranker (or defined by the user).
+/// `phrase` names TERRITORY, never a title/thesis (spec §5).
+model Throughline {
+  id        String   @id @default(cuid())
+  phrase    String
+  origin    String // "ranker" | "user"
+  status    String   @default("surfaced") // "surfaced" | "dismissed" | "promoted"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // relations
+  evidence Evidence[]
+  project  Project? // a throughline promotes to at most one project in v1
+
+  @@map("throughlines")
+}
+
+/// Why a through-line surfaced: an observation about the user's OWN words,
+/// pointing at a specific snippet. Never a score, never a quality verdict.
+model Evidence {
+  id            String @id @default(cuid())
+  throughlineId String @map("throughline_id")
+  snippetId     String @map("snippet_id")
+  observation   String // e.g. "returned to this 3×", "contrasts with snippet X"
+
+  throughline Throughline @relation(fields: [throughlineId], references: [id], onDelete: Cascade)
+  snippet     Snippet     @relation(fields: [snippetId], references: [id])
+
+  @@index([throughlineId])
+  @@map("evidence")
+}
+
+/// A piece being developed. A lens onto the shared snippet substrate.
+model Project {
+  id            String   @id @default(cuid())
+  throughlineId String   @unique @map("throughline_id")
+  title         String? // user-set, optional, deferred
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  throughline     Throughline      @relation(fields: [throughlineId], references: [id])
+  projectSnippets ProjectSnippet[]
+  blocks          Block[]
+  lintFlags       LintFlag[]
+
+  @@map("projects")
+}
+
+/// Join: a SHARED reference from a project to a snippet. The snippet is never
+/// moved or deleted; "removing" from a project = setting included = false
+/// ("move to bank"), spec §6/§8a.
+model ProjectSnippet {
+  id        String  @id @default(cuid())
+  projectId String  @map("project_id")
+  snippetId String  @map("snippet_id")
+  included  Boolean @default(true) // false = benched / in the bank
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  snippet Snippet @relation(fields: [snippetId], references: [id])
+
+  @@unique([projectId, snippetId])
+  @@index([projectId])
+  @@map("project_snippets")
+}
+
+/// Architect skeleton. A placeholder for shape/flow, not words (spec §8b).
+/// Recursive from day one via parentBlockId so blocks can nest (chapters) later.
+model Block {
+  id            String  @id @default(cuid())
+  projectId     String  @map("project_id")
+  label         String
+  body          String? // nullable until the user fills it
+  order         Int     @map("sort_order")
+  parentBlockId String? @map("parent_block_id")
+  kind          String  @default("placeholder") // "placeholder" | "filled"
+  snippetId     String? @map("snippet_id") // optional snippet dragged in to fill
+
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent    Block?     @relation("BlockChildren", fields: [parentBlockId], references: [id], onDelete: Cascade)
+  children  Block[]    @relation("BlockChildren")
+  snippet   Snippet?   @relation(fields: [snippetId], references: [id])
+  lintFlags LintFlag[]
+
+  @@index([projectId])
+  @@index([parentBlockId])
+  @@map("blocks")
+}
+
+/// Editor semantic-linter flag (spec §8c). Surfaces an observation; the only
+/// actions are fix-it-yourself or acknowledge & dismiss. Never supplies a fix.
+model LintFlag {
+  id        String  @id @default(cuid())
+  projectId String  @map("project_id")
+  blockId   String? @map("block_id")
+  range     String // serialized text range the flag applies to
+  reason    String // e.g. "you postulate this without support"
+  status    String  @default("open") // "open" | "acknowledged" | "resolved"
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  block   Block?  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("lint_flags")
+}
