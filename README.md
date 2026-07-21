@@ -32,6 +32,8 @@ npm run dev            # http://localhost:3000
 - `npm run shots` — Playwright visual + behavioral checks (needs `npm run dev`
   running); writes images to `screenshots/` (gitignored)
 - `npm run ranker:check` — deterministic Ranker-stub checks (shape + rarity)
+- `npm run promote:check` / `npm run modes:check` — Playwright checks for the
+  promotion flow and the three project modes (need `npm run dev` + a fresh spark)
 - `npm run sparks:clear` — clear derived through-lines (not snippets), for a
   clean spark demo
 
@@ -52,4 +54,4 @@ npm run dev            # http://localhost:3000
 - [x] Phase 3 — Timed Dump mode
 - [x] Phase 4 — Ranker stub (the "spark")
 - [x] Phase 5 — Promotion → Project
-- [ ] Phase 6 — Project modes (Filter / Architect / Editor)
+- [x] Phase 6 — Project modes (Filter / Architect / Editor)

@@ -15,10 +15,16 @@ export async function POST(
 ) {
   const { id } = await params;
 
-  const throughline = await prisma.throughline.findUnique({ where: { id } });
+  const throughline = await prisma.throughline.findUnique({
+    where: { id },
+    include: { evidence: true },
+  });
   if (!throughline) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
+  // Snippets the spark pointed at start life as "relates"; the rest as "unsure"
+  // — the starting colours for Filter (spec §8a), all user-overridable.
+  const anchorIds = new Set(throughline.evidence.map((e) => e.snippetId));
 
   // A through-line promotes to at most one project — return the existing one.
   const existing = await prisma.project.findUnique({
@@ -55,6 +61,7 @@ export async function POST(
           projectId: created.id,
           snippetId: s.id,
           included: true,
+          relation: anchorIds.has(s.id) ? "relates" : "unsure",
         })),
       });
     }

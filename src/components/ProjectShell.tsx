@@ -1,22 +1,80 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useQuery } from "@tanstack/react-query";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { fetchProject } from "@/lib/api";
+import { useState } from "react";
+import { fetchBlocks, fetchProject, reorderBlocks, updateBlock } from "@/lib/api";
 import { BankSidebar } from "./BankSidebar";
-import { SnippetList } from "./SnippetList";
+import { EditablePhrase } from "./project/EditablePhrase";
+import { ModeTabs, type Mode } from "./project/ModeTabs";
+import { FilterMode } from "./project/FilterMode";
+import { ArchitectMode } from "./project/ArchitectMode";
+import { EditorMode } from "./project/EditorMode";
 
-/**
- * The Project shell (spec §6.4). Lands the user in the piece with its snippets
- * in a persistent bank. The three modes (Filter / Architect / Editor) fill the
- * main area in Phase 6; for now it shows the pulled-in material.
- */
 export function ProjectShell({ id }: { id: string }) {
+  const queryClient = useQueryClient();
+  const [mode, setMode] = useState<Mode>("filter");
+
   const { data: project, isLoading, isError } = useQuery({
     queryKey: ["project", id],
     queryFn: () => fetchProject(id),
   });
+
+  const { data: blocks = [] } = useQuery({
+    queryKey: ["blocks", id],
+    queryFn: () => fetchBlocks(id),
+  });
+
+  const invalidateBlocks = () =>
+    queryClient.invalidateQueries({ queryKey: ["blocks", id] });
+
+  const fill = useMutation({
+    mutationFn: (a: { blockId: string; snippetId: string }) =>
+      updateBlock(a.blockId, { snippetId: a.snippetId }),
+    onSettled: invalidateBlocks,
+  });
+  const reorder = useMutation({
+    mutationFn: (orderedIds: string[]) => reorderBlocks(id, orderedIds),
+    onSettled: invalidateBlocks,
+  });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function onDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over) return;
+
+    // Drop a bank snippet onto a block → fill it.
+    if (active.data.current?.type === "bank") {
+      fill.mutate({
+        blockId: String(over.id),
+        snippetId: active.data.current.snippetId as string,
+      });
+      return;
+    }
+
+    // Reorder blocks.
+    if (active.id !== over.id) {
+      const ids = blocks.map((b) => b.id);
+      const from = ids.indexOf(String(active.id));
+      const to = ids.indexOf(String(over.id));
+      if (from >= 0 && to >= 0) reorder.mutate(arrayMove(ids, from, to));
+    }
+  }
 
   if (isLoading) {
     return (
@@ -25,7 +83,6 @@ export function ProjectShell({ id }: { id: string }) {
       </main>
     );
   }
-
   if (isError || !project) {
     return (
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
@@ -39,9 +96,7 @@ export function ProjectShell({ id }: { id: string }) {
     );
   }
 
-  const included = project.snippets
-    .filter((s) => s.included)
-    .map((s) => s.snippet);
+  const included = project.snippets.filter((s) => s.included);
 
   return (
     <motion.main
@@ -50,7 +105,7 @@ export function ProjectShell({ id }: { id: string }) {
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="mx-auto w-full max-w-5xl flex-1 px-6 py-10"
     >
-      <header className="mb-10">
+      <header className="mb-8">
         <Link
           href="/"
           className="text-xs text-faint transition-colors hover:text-foreground"
@@ -60,24 +115,47 @@ export function ProjectShell({ id }: { id: string }) {
         <div className="mt-4 text-[11px] uppercase tracking-wider text-faint">
           The piece
         </div>
-        <h1 className="mt-1 max-w-2xl text-2xl leading-snug text-foreground">
-          {project.throughline.phrase}
-        </h1>
+        <div className="mt-1">
+          <EditablePhrase
+            projectId={project.id}
+            throughlineId={project.throughline.id}
+            phrase={project.throughline.phrase}
+          />
+        </div>
       </header>
 
-      <div className="flex flex-col gap-10 md:flex-row md:gap-12">
-        <section className="min-w-0 flex-1">
-          <h2 className="mb-4 text-[11px] uppercase tracking-wider text-faint">
-            The material you pulled in
-          </h2>
-          <SnippetList snippets={included} />
-          <p className="mt-8 text-sm text-faint">
-            Ways to shape this — filter, architect, edit — are coming next.
-          </p>
-        </section>
-
-        <BankSidebar snippets={project.snippets} />
+      <div className="mb-8">
+        <ModeTabs active={mode} onChange={setMode} />
       </div>
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+      >
+        <div className="flex flex-col gap-10 md:flex-row md:gap-12">
+          <section className="min-w-0 flex-1">
+            {mode === "filter" && (
+              <FilterMode projectId={project.id} snippets={project.snippets} />
+            )}
+            {mode === "architect" && (
+              <ArchitectMode
+                projectId={project.id}
+                blocks={blocks}
+                includedSnippets={included}
+              />
+            )}
+            {mode === "editor" && (
+              <EditorMode projectId={project.id} initialDraft={project.draft} />
+            )}
+          </section>
+
+          <BankSidebar
+            snippets={project.snippets}
+            draggable={mode === "architect"}
+          />
+        </div>
+      </DndContext>
     </motion.main>
   );
 }

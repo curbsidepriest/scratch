@@ -1,5 +1,6 @@
 "use client";
 
+import { useDraggable } from "@dnd-kit/core";
 import type { ProjectSnippetDTO } from "@/lib/types";
 
 function excerpt(text: string, max = 70): string {
@@ -7,12 +8,37 @@ function excerpt(text: string, max = 70): string {
   return clean.length <= max ? clean : `${clean.slice(0, max).trimEnd()}…`;
 }
 
+function DraggableItem({ ps }: { ps: ProjectSnippetDTO }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `bank:${ps.snippet.id}`,
+    data: { type: "bank", snippetId: ps.snippet.id },
+  });
+  return (
+    <li
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`cursor-grab rounded-md border border-border bg-surface px-3 py-2 text-xs leading-snug text-muted active:cursor-grabbing ${
+        isDragging ? "opacity-40" : ""
+      }`}
+    >
+      {excerpt(ps.snippet.content)}
+    </li>
+  );
+}
+
 /**
  * The persistent snippet bank (spec §6.4/§8a). Shows every snippet shared into
- * the project. Benched snippets ("move to bank") stay here — nothing is
- * destroyed; they may start the next piece.
+ * the project. In Architect mode the included ones become draggable (drop onto
+ * a block to fill it). Benched snippets stay here — nothing is destroyed.
  */
-export function BankSidebar({ snippets }: { snippets: ProjectSnippetDTO[] }) {
+export function BankSidebar({
+  snippets,
+  draggable = false,
+}: {
+  snippets: ProjectSnippetDTO[];
+  draggable?: boolean;
+}) {
   const included = snippets.filter((s) => s.included);
   const benched = snippets.filter((s) => !s.included);
 
@@ -21,16 +47,25 @@ export function BankSidebar({ snippets }: { snippets: ProjectSnippetDTO[] }) {
       <div className="sticky top-10">
         <h2 className="mb-3 text-[11px] uppercase tracking-wider text-faint">
           Bank · {snippets.length}
+          {draggable && (
+            <span className="ml-2 normal-case tracking-normal text-faint">
+              (drag onto a block)
+            </span>
+          )}
         </h2>
         <ul className="flex flex-col gap-1.5">
-          {included.map((ps) => (
-            <li
-              key={ps.snippet.id}
-              className="rounded-md border border-border bg-surface px-3 py-2 text-xs leading-snug text-muted"
-            >
-              {excerpt(ps.snippet.content)}
-            </li>
-          ))}
+          {included.map((ps) =>
+            draggable ? (
+              <DraggableItem key={ps.snippet.id} ps={ps} />
+            ) : (
+              <li
+                key={ps.snippet.id}
+                className="rounded-md border border-border bg-surface px-3 py-2 text-xs leading-snug text-muted"
+              >
+                {excerpt(ps.snippet.content)}
+              </li>
+            ),
+          )}
         </ul>
 
         {benched.length > 0 && (

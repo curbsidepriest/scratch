@@ -1,4 +1,6 @@
 import type {
+  BlockDTO,
+  LintFlagDTO,
   ProjectDTO,
   RelevantResponse,
   SnippetDTO,
@@ -62,4 +64,106 @@ export async function fetchProject(id: string): Promise<ProjectDTO> {
   const res = await fetch(`/api/projects/${id}`);
   if (!res.ok) throw new Error("Failed to load project");
   return res.json();
+}
+
+export async function updateProjectSnippet(
+  id: string,
+  patch: { included?: boolean; relation?: string },
+): Promise<void> {
+  const res = await fetch(`/api/project-snippets/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error("Failed to update snippet");
+}
+
+export async function updateThroughlinePhrase(
+  id: string,
+  phrase: string,
+): Promise<void> {
+  const res = await fetch(`/api/throughlines/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phrase }),
+  });
+  if (!res.ok) throw new Error("Failed to update through-line");
+}
+
+// --- Architect: blocks ---
+
+export async function fetchBlocks(projectId: string): Promise<BlockDTO[]> {
+  const res = await fetch(`/api/projects/${projectId}/blocks`);
+  if (!res.ok) throw new Error("Failed to load blocks");
+  return res.json();
+}
+
+export async function createBlock(
+  projectId: string,
+  label: string,
+): Promise<void> {
+  const res = await fetch(`/api/projects/${projectId}/blocks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label }),
+  });
+  if (!res.ok) throw new Error("Failed to create block");
+}
+
+export async function updateBlock(
+  id: string,
+  patch: { label?: string; body?: string | null; snippetId?: string | null },
+): Promise<void> {
+  const res = await fetch(`/api/blocks/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error("Failed to update block");
+}
+
+export async function deleteBlock(id: string): Promise<void> {
+  const res = await fetch(`/api/blocks/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete block");
+}
+
+export async function reorderBlocks(
+  projectId: string,
+  orderedIds: string[],
+): Promise<void> {
+  const res = await fetch(`/api/projects/${projectId}/blocks/reorder`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderedIds }),
+  });
+  if (!res.ok) throw new Error("Failed to reorder blocks");
+}
+
+// --- Editor: draft + lint ---
+
+export async function saveDraft(projectId: string, draft: string): Promise<void> {
+  const res = await fetch(`/api/projects/${projectId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ draft }),
+  });
+  if (!res.ok) throw new Error("Failed to save draft");
+}
+
+export async function runLint(projectId: string): Promise<LintFlagDTO[]> {
+  const res = await fetch(`/api/projects/${projectId}/lint`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to lint");
+  return res.json();
+}
+
+export async function setLintFlagStatus(
+  id: string,
+  status: "acknowledged" | "resolved" | "open",
+): Promise<void> {
+  const res = await fetch(`/api/lint-flags/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error("Failed to update flag");
 }

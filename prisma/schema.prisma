@@ -68,6 +68,7 @@ model Project {
   id            String   @id @default(cuid())
   throughlineId String   @unique @map("throughline_id")
   title         String? // user-set, optional, deferred
+  draft         String   @default("") // Editor working text (spec §8c)
   createdAt     DateTime @default(now()) @map("created_at")
 
   throughline     Throughline      @relation(fields: [throughlineId], references: [id])
@@ -86,6 +87,7 @@ model ProjectSnippet {
   projectId String  @map("project_id")
   snippetId String  @map("snippet_id")
   included  Boolean @default(true) // false = benched / in the bank
+  relation  String  @default("unsure") // Filter colour: relates | unsure | unrelated
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   snippet Snippet @relation(fields: [snippetId], references: [id])

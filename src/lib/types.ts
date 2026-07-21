@@ -34,15 +34,37 @@ export interface RelevantResponse {
   snippets: RelevantSnippetDTO[];
 }
 
+export type Relation = "relates" | "unsure" | "unrelated";
+
 export interface ProjectSnippetDTO {
+  id: string;
   included: boolean;
+  relation: Relation;
   snippet: SnippetDTO;
 }
 
 export interface ProjectDTO {
   id: string;
   title: string | null;
+  draft: string;
   createdAt: string;
   throughline: { id: string; phrase: string };
   snippets: ProjectSnippetDTO[];
+}
+
+export interface BlockDTO {
+  id: string;
+  label: string;
+  body: string | null;
+  order: number;
+  parentBlockId: string | null;
+  kind: string;
+  snippet: { id: string; content: string } | null;
+  gap: string | null;
+}
+
+export interface LintFlagDTO {
+  id: string;
+  reason: string;
+  quote: string;
 }
