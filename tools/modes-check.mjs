@@ -88,6 +88,28 @@ check(
 );
 await page.screenshot({ path: `${OUT}/09-architect.png` });
 
+// Reorder the two snippets WITHIN the Body block.
+const orderBefore = await bodyBlock.locator("p").allInnerTexts();
+const snipGrips = bodyBlock.getByRole("button", { name: "Drag to reorder snippet" });
+const s1 = await snipGrips.nth(1).boundingBox();
+const s0 = await snipGrips.nth(0).boundingBox();
+if (s1 && s0) {
+  await page.mouse.move(s1.x + s1.width / 2, s1.y + s1.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(s1.x + 8, s1.y - 6, { steps: 5 });
+  await page.mouse.move(s0.x + s0.width / 2, s0.y - 4, { steps: 10 });
+  await page.mouse.move(s0.x + s0.width / 2, s0.y - 8, { steps: 4 });
+  await page.mouse.up();
+  await page.waitForTimeout(700);
+}
+const orderAfter = await bodyBlock.locator("p").allInnerTexts();
+check(
+  "snippets reorder within a block",
+  JSON.stringify(orderBefore) !== JSON.stringify(orderAfter) &&
+    orderBefore.length === orderAfter.length,
+  `${orderBefore[0]?.slice(0, 12)}… → ${orderAfter[0]?.slice(0, 12)}…`,
+);
+
 // --- Editor ---
 await page.getByRole("button", { name: /Editor/ }).click();
 await page.waitForTimeout(300);

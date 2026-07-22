@@ -14,7 +14,14 @@ import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
-import { addBlockSnippet, fetchBlocks, fetchProject, reorderBlocks } from "@/lib/api";
+import {
+  addBlockSnippet,
+  fetchBlocks,
+  fetchProject,
+  removeBlockSnippet,
+  reorderBlockSnippets,
+  reorderBlocks,
+} from "@/lib/api";
 import { BankSidebar } from "./BankSidebar";
 import { EditablePhrase } from "./project/EditablePhrase";
 import { ModeTabs, type Mode } from "./project/ModeTabs";
@@ -48,6 +55,22 @@ export function ProjectShell({ id }: { id: string }) {
     mutationFn: (orderedIds: string[]) => reorderBlocks(id, orderedIds),
     onSettled: invalidateBlocks,
   });
+  const reorderSnippets = useMutation({
+    mutationFn: (a: { blockId: string; orderedIds: string[] }) =>
+      reorderBlockSnippets(a.blockId, a.orderedIds),
+    onSettled: invalidateBlocks,
+  });
+  const moveSnippet = useMutation({
+    mutationFn: async (a: {
+      fromBlockId: string;
+      toBlockId: string;
+      snippetId: string;
+    }) => {
+      await removeBlockSnippet(a.fromBlockId, a.snippetId);
+      await addBlockSnippet(a.toBlockId, a.snippetId);
+    },
+    onSettled: invalidateBlocks,
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -57,13 +80,44 @@ export function ProjectShell({ id }: { id: string }) {
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     if (!over) return;
+    const aType = active.data.current?.type;
+    const oData = over.data.current;
 
-    // Drop a bank snippet onto a block → fill it.
-    if (active.data.current?.type === "bank") {
+    // Which block is under the drop? (over may be a block or a snippet-in-block)
+    const overBlockId =
+      oData?.type === "snippet" ? (oData.blockId as string) : String(over.id);
+
+    // Drop a bank snippet onto a block → add it.
+    if (aType === "bank") {
       fill.mutate({
-        blockId: String(over.id),
-        snippetId: active.data.current.snippetId as string,
+        blockId: overBlockId,
+        snippetId: active.data.current!.snippetId as string,
       });
+      return;
+    }
+
+    // Reorder / move a snippet within or between blocks.
+    if (aType === "snippet") {
+      const fromBlockId = active.data.current!.blockId as string;
+      const snippetId = active.data.current!.snippetId as string;
+      if (fromBlockId === overBlockId) {
+        const block = blocks.find((b) => b.id === fromBlockId);
+        if (!block) return;
+        const ids = block.snippets.map((s) => s.id);
+        const from = ids.indexOf(snippetId);
+        const to =
+          oData?.type === "snippet"
+            ? ids.indexOf(oData.snippetId as string)
+            : ids.length - 1;
+        if (from >= 0 && to >= 0 && from !== to) {
+          reorderSnippets.mutate({
+            blockId: fromBlockId,
+            orderedIds: arrayMove(ids, from, to),
+          });
+        }
+      } else {
+        moveSnippet.mutate({ fromBlockId, toBlockId: overBlockId, snippetId });
+      }
       return;
     }
 

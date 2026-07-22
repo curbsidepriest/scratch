@@ -199,6 +199,18 @@ export async function removeBlockSnippet(
   if (!res.ok) throw new Error("Failed to remove snippet from block");
 }
 
+export async function reorderBlockSnippets(
+  blockId: string,
+  orderedSnippetIds: string[],
+): Promise<void> {
+  const res = await fetch(`/api/blocks/${blockId}/snippets/reorder`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderedSnippetIds }),
+  });
+  if (!res.ok) throw new Error("Failed to reorder snippets");
+}
+
 export async function deleteBlock(id: string): Promise<void> {
   const res = await fetch(`/api/blocks/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete block");

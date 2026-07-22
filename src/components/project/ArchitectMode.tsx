@@ -103,7 +103,7 @@ function BlockCard({
   onChange: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } =
-    useSortable({ id: block.id });
+    useSortable({ id: block.id, data: { type: "block" } });
   const [editingLabel, setEditingLabel] = useState(false);
   const [label, setLabel] = useState(block.label);
   const [writing, setWriting] = useState(false);
@@ -186,30 +186,27 @@ function BlockCard({
             </div>
           )}
 
-          {/* The snippets filling this block (a block can hold many). */}
+          {/* The snippets filling this block (a block can hold many; drag to
+              reorder within, or across, blocks). */}
           {block.snippets.length > 0 && (
-            <div className="mt-2 flex flex-col gap-1.5">
-              {block.snippets.map((s) => (
-                <div
-                  key={s.id}
-                  className="group/snip rounded-md border-l-2 border-emerald-500 bg-background px-3 py-2"
-                >
-                  <EditableSnippet
-                    content={s.content}
-                    onSave={(next) =>
-                      editSnippet.mutateAsync({ snippetId: s.id, content: next })
+            <SortableContext
+              items={block.snippets.map((s) => `sb:${block.id}:${s.id}`)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="mt-2 flex flex-col gap-1.5">
+                {block.snippets.map((s) => (
+                  <SnippetRow
+                    key={s.id}
+                    blockId={block.id}
+                    snippet={s}
+                    onEdit={(content) =>
+                      editSnippet.mutateAsync({ snippetId: s.id, content })
                     }
-                    textClassName="text-[13px] leading-snug text-muted"
+                    onRemove={() => unfill.mutate(s.id)}
                   />
-                  <button
-                    onClick={() => unfill.mutate(s.id)}
-                    className="mt-1 text-[11px] text-faint hover:text-muted"
-                  >
-                    remove
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </SortableContext>
           )}
 
           {/* Always available: drag another snippet in, or write new copy. */}
@@ -271,5 +268,57 @@ function BlockCard({
         </button>
       </div>
     </article>
+  );
+}
+
+function SnippetRow({
+  blockId,
+  snippet,
+  onEdit,
+  onRemove,
+}: {
+  blockId: string;
+  snippet: { id: string; content: string };
+  onEdit: (content: string) => Promise<void> | void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({
+      id: `sb:${blockId}:${snippet.id}`,
+      data: { type: "snippet", blockId, snippetId: snippet.id },
+    });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-start gap-2 rounded-md border-l-2 border-emerald-500 bg-background px-3 py-2"
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="mt-0.5 cursor-grab text-xs text-faint hover:text-muted active:cursor-grabbing"
+        aria-label="Drag to reorder snippet"
+      >
+        ⠿
+      </button>
+      <div className="min-w-0 flex-1">
+        <EditableSnippet
+          content={snippet.content}
+          onSave={onEdit}
+          textClassName="text-[13px] leading-snug text-muted"
+        />
+        <button
+          onClick={onRemove}
+          className="mt-1 text-[11px] text-faint hover:text-muted"
+        >
+          remove
+        </button>
+      </div>
+    </div>
   );
 }
