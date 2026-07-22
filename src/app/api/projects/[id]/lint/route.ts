@@ -19,8 +19,10 @@ function quoteOf(range: string): string {
 
 /**
  * POST /api/projects/:id/lint — re-evaluate the stored draft and reconcile
- * flags. Returns the open flags to show. New issues → open. Issues that
- * disappeared → resolved. Dismissed issues with unchanged text → stay quiet.
+ * flags. Idempotent: acknowledged flags are preserved (and suppress their
+ * issue), everything else is recomputed from the current draft each run. So a
+ * dismissed issue stays quiet unless its text materially changes, and repeated
+ * or concurrent calls can't pile up duplicate flags.
  */
 export async function POST(
   _req: Request,
@@ -39,40 +41,31 @@ export async function POST(
   );
 
   const existing = await prisma.lintFlag.findMany({ where: { projectId: id } });
-  const existingByKey = new Map(
-    existing.map((f) => [identity(f.reason, quoteOf(f.range)), f]),
+  const acknowledgedKeys = new Set(
+    existing
+      .filter((f) => f.status === "acknowledged")
+      .map((f) => identity(f.reason, quoteOf(f.range))),
   );
 
-  // New issues → open flags. A resolved flag whose issue returned → reopen.
-  // An acknowledged flag with unchanged text is intentionally left dismissed.
-  for (const [k, c] of candidateByKey) {
-    const match = existingByKey.get(k);
-    if (!match) {
-      await prisma.lintFlag.create({
-        data: {
-          projectId: id,
-          range: JSON.stringify({ para: JSON.parse(c.range).para, quote: c.quote }),
-          reason: c.reason,
-          status: "open",
-        },
-      });
-    } else if (match.status === "resolved") {
-      await prisma.lintFlag.update({
-        where: { id: match.id },
-        data: { status: "open" },
-      });
-    }
-  }
-
-  // Open flags whose issue is gone (the writer fixed it) → resolved.
-  for (const [k, f] of existingByKey) {
-    if (f.status === "open" && !candidateByKey.has(k)) {
-      await prisma.lintFlag.update({
-        where: { id: f.id },
-        data: { status: "resolved" },
-      });
-    }
-  }
+  await prisma.$transaction([
+    // Drop the recomputed (non-acknowledged) flags…
+    prisma.lintFlag.deleteMany({
+      where: { projectId: id, status: { not: "acknowledged" } },
+    }),
+    // …and re-create an open flag for each current issue not already dismissed.
+    ...[...candidateByKey]
+      .filter(([k]) => !acknowledgedKeys.has(k))
+      .map(([, c]) =>
+        prisma.lintFlag.create({
+          data: {
+            projectId: id,
+            range: JSON.stringify({ para: JSON.parse(c.range).para, quote: c.quote }),
+            reason: c.reason,
+            status: "open",
+          },
+        }),
+      ),
+  ]);
 
   const open = await prisma.lintFlag.findMany({
     where: { projectId: id, status: "open" },

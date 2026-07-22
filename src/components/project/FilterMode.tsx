@@ -1,8 +1,9 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateProjectSnippet } from "@/lib/api";
+import { updateProjectSnippet, updateSnippet } from "@/lib/api";
 import type { ProjectSnippetDTO, Relation } from "@/lib/types";
+import { EditableSnippet } from "../EditableSnippet";
 
 const NEXT: Record<Relation, Relation> = {
   relates: "unsure",
@@ -24,13 +25,19 @@ export function FilterMode({
   snippets: ProjectSnippetDTO[];
 }) {
   const queryClient = useQueryClient();
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["project", projectId] });
   const update = useMutation({
     mutationFn: (args: {
       id: string;
       patch: { included?: boolean; relation?: string };
     }) => updateProjectSnippet(args.id, args.patch),
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
+    onSettled: invalidate,
+  });
+  const editContent = useMutation({
+    mutationFn: (args: { snippetId: string; content: string }) =>
+      updateSnippet(args.snippetId, args.content),
+    onSettled: invalidate,
   });
 
   const included = snippets.filter((s) => s.included);
@@ -54,9 +61,13 @@ export function FilterMode({
               key={ps.id}
               className={`rounded-lg border border-l-2 border-border bg-surface px-5 py-4 ${meta.border}`}
             >
-              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
-                {ps.snippet.content}
-              </p>
+              <EditableSnippet
+                content={ps.snippet.content}
+                onSave={(content) =>
+                  editContent.mutateAsync({ snippetId: ps.snippet.id, content })
+                }
+                textClassName="text-[15px] leading-relaxed text-foreground"
+              />
               <div className="mt-3 flex items-center gap-4 text-xs">
                 <button
                   onClick={() =>

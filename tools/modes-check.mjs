@@ -1,6 +1,6 @@
-// Verifies Phase 6 — the three project modes. Promotes a fresh project, then
-// exercises Filter, Architect, and Editor. Run `npm run sparks:clear` first and
-// have the dev server running on http://localhost:3000.
+// Verifies Phase 6 modes + refinements. Promotes a fresh project, then
+// exercises Filter, Architect (default template, write-new-copy, drag-to-fill),
+// and Editor. Run `npm run sparks:clear` first; dev server on :3000.
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 
@@ -15,9 +15,9 @@ function check(name, ok, detail = "") {
 }
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1280, height: 950 } });
+const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
 
-// Get into a project via promotion.
+// Into a project via promotion.
 await page.goto(BASE, { waitUntil: "networkidle" });
 await page.locator("aside").first().waitFor({ state: "visible", timeout: 5000 });
 await page.getByRole("button", { name: "Develop this →" }).click();
@@ -31,21 +31,46 @@ check("filter shows relation colours", (await page.getByText(/relates|unsure|doe
 const benchedBefore = await page.getByText(/Benched ·/).count();
 await page.getByRole("button", { name: "Move to bank" }).first().click();
 await page.waitForTimeout(500);
-check("move to bank benches a snippet (not deleted)", (await page.getByText(/Benched ·/).count()) > benchedBefore);
+check("move to bank benches (not deletes)", (await page.getByText(/Benched ·/).count()) > benchedBefore);
 await page.screenshot({ path: `${OUT}/08-filter.png` });
 
 // --- Architect ---
 await page.getByRole("button", { name: /Architect/ }).click();
-await page.waitForTimeout(300);
-check("architect bank is draggable", (await page.getByText(/drag onto a block/).count()) === 1);
+await page.waitForTimeout(400);
+check("default template blocks exist", (await page.getByText("Introduction").count()) >= 1 && (await page.getByText("Body").count()) >= 1 && (await page.getByText("Conclusion").count()) >= 1);
+check("no fill dropdown (drag-only)", (await page.locator("select").count()) === 0);
+
+// Add a claim block → gap surfaces.
 await page.getByPlaceholder(/intro with the anecdote/).fill("Argument: why depth matters");
 await page.getByRole("button", { name: "Add block" }).click();
 await page.waitForTimeout(500);
-check("block is created", (await page.getByText("Argument: why depth matters").count()) >= 1);
-check("gap flag is surfaced on the claim", (await page.getByText(/needs support/).count()) >= 1);
-await page.locator("select").first().selectOption({ index: 1 });
-await page.waitForTimeout(500);
-check("block can be filled from a snippet", (await page.getByText("remove fill").count()) >= 1);
+const claim = page.locator("article", { hasText: "Argument: why depth matters" });
+check("added block is present", (await claim.count()) >= 1);
+check("gap flag surfaced on claim", (await claim.getByText(/needs support/).count()) >= 1);
+
+// Write new copy straight into the block → new snippet fills it + joins bank.
+await claim.getByRole("button", { name: "write new copy" }).click();
+await claim.locator("textarea").fill("Depth is a choice, not a hiding place. That distinction is the whole piece.");
+await claim.getByRole("button", { name: "Save as snippet" }).click();
+await page.waitForTimeout(600);
+check("write-new-copy fills the block", (await claim.getByText("remove fill").count()) >= 1);
+check("new copy became a bank snippet (blob)", (await page.getByText(/Bank · 4/).count()) === 1);
+
+// Drag a bank snippet onto the "Body" block.
+const grip = page.getByRole("button", { name: "Drag onto a block" }).first();
+const bodyBlock = page.locator("article", { hasText: "Body" }).first();
+const g = await grip.boundingBox();
+const b = await bodyBlock.boundingBox();
+if (g && b) {
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(g.x + 30, g.y + 12, { steps: 6 });
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 12 });
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2 + 3, { steps: 4 });
+  await page.mouse.up();
+  await page.waitForTimeout(700);
+}
+check("drag-to-fill fills the Body block", (await bodyBlock.getByText("remove fill").count()) >= 1);
 await page.screenshot({ path: `${OUT}/09-architect.png` });
 
 // --- Editor ---
@@ -59,7 +84,6 @@ await page.getByRole("button", { name: "Re-check" }).click();
 await page.waitForTimeout(800);
 check("linter surfaces a flag", (await page.getByText(/does it need support/).count()) >= 1);
 await page.screenshot({ path: `${OUT}/10-editor.png` });
-// Two-action interaction: acknowledge & dismiss.
 await page.getByRole("button", { name: /Acknowledge/ }).first().click();
 await page.waitForTimeout(600);
 check("acknowledge dismisses the flag", (await page.getByText(/does it need support/).count()) === 0);

@@ -96,8 +96,6 @@ export function ProjectShell({ id }: { id: string }) {
     );
   }
 
-  const included = project.snippets.filter((s) => s.included);
-
   return (
     <motion.main
       initial={{ opacity: 0, y: 10 }}
@@ -139,11 +137,7 @@ export function ProjectShell({ id }: { id: string }) {
               <FilterMode projectId={project.id} snippets={project.snippets} />
             )}
             {mode === "architect" && (
-              <ArchitectMode
-                projectId={project.id}
-                blocks={blocks}
-                includedSnippets={included}
-              />
+              <ArchitectMode projectId={project.id} blocks={blocks} />
             )}
             {mode === "editor" && (
               <EditorMode projectId={project.id} initialDraft={project.draft} />
@@ -151,6 +145,7 @@ export function ProjectShell({ id }: { id: string }) {
           </section>
 
           <BankSidebar
+            projectId={project.id}
             snippets={project.snippets}
             draggable={mode === "architect"}
           />

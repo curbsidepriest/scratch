@@ -65,6 +65,16 @@ export async function POST(
         })),
       });
     }
+    // Start every piece with a default skeleton so Architect isn't a blank
+    // page. These are placeholders to reshape, reorder, or delete.
+    await tx.block.createMany({
+      data: ["Introduction", "Body", "Conclusion"].map((label, order) => ({
+        projectId: created.id,
+        label,
+        order,
+        kind: "placeholder",
+      })),
+    });
     await tx.throughline.update({
       where: { id },
       data: { status: "promoted" },

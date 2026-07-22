@@ -1,7 +1,10 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { SnippetDTO } from "@/lib/types";
 import { relativeTime } from "@/lib/time";
+import { updateSnippet } from "@/lib/api";
+import { EditableSnippet } from "./EditableSnippet";
 
 const MODE_LABELS: Record<string, string> = {
   dump: "dump",
@@ -10,16 +13,32 @@ const MODE_LABELS: Record<string, string> = {
 };
 
 function SnippetCard({ snippet }: { snippet: SnippetDTO }) {
+  const queryClient = useQueryClient();
   const isOptimistic = snippet.id.startsWith("optimistic-");
+
+  const save = useMutation({
+    mutationFn: (content: string) => updateSnippet(snippet.id, content),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ["snippets"] }),
+  });
+
   return (
     <article
       className={`rounded-lg border border-border bg-surface px-5 py-4 transition-opacity ${
         isOptimistic ? "opacity-60" : "opacity-100"
       }`}
     >
-      <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
-        {snippet.content}
-      </p>
+      {isOptimistic ? (
+        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
+          {snippet.content}
+        </p>
+      ) : (
+        <EditableSnippet
+          content={snippet.content}
+          onSave={(next) => save.mutateAsync(next)}
+          textClassName="text-[15px] leading-relaxed text-foreground"
+        />
+      )}
       <div className="mt-3 flex items-center gap-2 text-xs text-faint">
         <span>{relativeTime(snippet.createdAt)}</span>
         <span aria-hidden>·</span>

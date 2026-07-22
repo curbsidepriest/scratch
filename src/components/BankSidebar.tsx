@@ -1,41 +1,92 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { updateSnippet } from "@/lib/api";
 import type { ProjectSnippetDTO } from "@/lib/types";
+import { EditableSnippet } from "./EditableSnippet";
 
-function excerpt(text: string, max = 70): string {
-  const clean = text.replace(/\s+/g, " ").trim();
-  return clean.length <= max ? clean : `${clean.slice(0, max).trimEnd()}…`;
-}
+function BankItem({
+  ps,
+  projectId,
+  draggable,
+  editable,
+}: {
+  ps: ProjectSnippetDTO;
+  projectId: string;
+  draggable: boolean;
+  editable: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const [expanded, setExpanded] = useState(false);
 
-function DraggableItem({ ps }: { ps: ProjectSnippetDTO }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `bank:${ps.snippet.id}`,
     data: { type: "bank", snippetId: ps.snippet.id },
   });
+
+  const save = useMutation({
+    mutationFn: (content: string) => updateSnippet(ps.snippet.id, content),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["blocks", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["snippets"] });
+    },
+  });
+
   return (
     <li
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className={`cursor-grab rounded-md border border-border bg-surface px-3 py-2 text-xs leading-snug text-muted active:cursor-grabbing ${
-        isDragging ? "opacity-40" : ""
-      }`}
+      ref={draggable ? setNodeRef : undefined}
+      className={`rounded-md border bg-surface text-xs leading-snug text-muted ${
+        editable ? "border-border" : "border-dashed border-border text-faint"
+      } ${isDragging ? "opacity-40" : ""}`}
     >
-      {excerpt(ps.snippet.content)}
+      <div className="flex items-start gap-1.5 px-2.5 py-2">
+        {draggable && (
+          <button
+            {...listeners}
+            {...attributes}
+            className="mt-0.5 cursor-grab text-faint hover:text-muted active:cursor-grabbing"
+            aria-label="Drag onto a block"
+          >
+            ⠿
+          </button>
+        )}
+        <div className="min-w-0 flex-1">
+          {expanded && editable ? (
+            <EditableSnippet
+              content={ps.snippet.content}
+              onSave={(next) => save.mutateAsync(next)}
+              textClassName="text-xs leading-snug text-muted"
+            />
+          ) : (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className={`block w-full text-left ${expanded ? "" : "line-clamp-3"}`}
+              title={expanded ? "Click to collapse" : "Click to expand"}
+            >
+              {ps.snippet.content}
+            </button>
+          )}
+        </div>
+      </div>
     </li>
   );
 }
 
 /**
- * The persistent snippet bank (spec §6.4/§8a). Shows every snippet shared into
- * the project. In Architect mode the included ones become draggable (drop onto
- * a block to fill it). Benched snippets stay here — nothing is destroyed.
+ * The persistent snippet bank (spec §6.4/§8a). Longer previews, click to expand
+ * to the whole snippet, edit in place. In Architect the included ones are
+ * draggable (grip) onto a block. Benched snippets stay here — nothing is
+ * destroyed.
  */
 export function BankSidebar({
+  projectId,
   snippets,
   draggable = false,
 }: {
+  projectId: string;
   snippets: ProjectSnippetDTO[];
   draggable?: boolean;
 }) {
@@ -54,18 +105,15 @@ export function BankSidebar({
           )}
         </h2>
         <ul className="flex flex-col gap-1.5">
-          {included.map((ps) =>
-            draggable ? (
-              <DraggableItem key={ps.snippet.id} ps={ps} />
-            ) : (
-              <li
-                key={ps.snippet.id}
-                className="rounded-md border border-border bg-surface px-3 py-2 text-xs leading-snug text-muted"
-              >
-                {excerpt(ps.snippet.content)}
-              </li>
-            ),
-          )}
+          {included.map((ps) => (
+            <BankItem
+              key={ps.snippet.id}
+              ps={ps}
+              projectId={projectId}
+              draggable={draggable}
+              editable
+            />
+          ))}
         </ul>
 
         {benched.length > 0 && (
@@ -75,12 +123,13 @@ export function BankSidebar({
             </h3>
             <ul className="flex flex-col gap-1.5">
               {benched.map((ps) => (
-                <li
+                <BankItem
                   key={ps.snippet.id}
-                  className="rounded-md border border-dashed border-border px-3 py-2 text-xs leading-snug text-faint"
-                >
-                  {excerpt(ps.snippet.content)}
-                </li>
+                  ps={ps}
+                  projectId={projectId}
+                  draggable={false}
+                  editable={false}
+                />
               ))}
             </ul>
           </>

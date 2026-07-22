@@ -13,6 +13,15 @@ export async function fetchSnippets(): Promise<SnippetDTO[]> {
   return res.json();
 }
 
+export async function updateSnippet(id: string, content: string): Promise<void> {
+  const res = await fetch(`/api/snippets/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) throw new Error("Failed to update snippet");
+}
+
 export async function createSnippet(input: {
   content: string;
   sourceMode?: string;
@@ -125,6 +134,22 @@ export async function updateBlock(
 export async function deleteBlock(id: string): Promise<void> {
   const res = await fetch(`/api/blocks/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete block");
+}
+
+/** Write new copy from inside a project; creates a snippet and (optionally)
+ * fills a block with it. Returns the new snippet id. */
+export async function writeProjectSnippet(
+  projectId: string,
+  content: string,
+  blockId?: string,
+): Promise<{ id: string }> {
+  const res = await fetch(`/api/projects/${projectId}/snippets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content, blockId }),
+  });
+  if (!res.ok) throw new Error("Failed to write snippet");
+  return res.json();
 }
 
 export async function reorderBlocks(
