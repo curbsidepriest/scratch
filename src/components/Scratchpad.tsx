@@ -6,38 +6,47 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  createSnippet,
+  createScratch,
+  commitSnippets,
   dismissThroughline,
-  fetchSnippets,
+  fetchScratches,
   fetchSpark,
+  fetchSuggestion,
 } from "@/lib/api";
-import type { SnippetDTO, SparkDTO } from "@/lib/types";
-import { wordCount } from "@/lib/domain";
+import type { SegmentSuggestion, SparkDTO } from "@/lib/types";
 import { Composer } from "./Composer";
-import { SnippetList } from "./SnippetList";
+import { ScratchList } from "./ScratchList";
 import { Spark } from "./Spark";
 import { PromotionOverlay } from "./PromotionOverlay";
+import { SegmentationReview } from "./SegmentationReview";
 
-const SNIPPETS_KEY = ["snippets"];
+const SCRATCHES_KEY = ["scratches"];
 const SPARK_KEY = ["spark"];
 
 export function Scratchpad() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  // The through-line currently being promoted (drives the overlay).
   const [promoting, setPromoting] = useState<SparkDTO | null>(null);
+  const [review, setReview] = useState<{
+    scratchId: string;
+    suggestion: SegmentSuggestion;
+  } | null>(null);
 
-  const { data: snippets = [], isLoading } = useQuery({
-    queryKey: SNIPPETS_KEY,
-    queryFn: fetchSnippets,
+  const { data: scratches = [], isLoading } = useQuery({
+    queryKey: SCRATCHES_KEY,
+    queryFn: fetchScratches,
   });
 
-  // The Ranker reads continuously; we re-check after each capture (spec §5).
   const { data: spark } = useQuery({
     queryKey: SPARK_KEY,
     queryFn: fetchSpark,
   });
+
+  const afterChange = () => {
+    queryClient.invalidateQueries({ queryKey: SCRATCHES_KEY });
+    queryClient.invalidateQueries({ queryKey: SPARK_KEY });
+  };
 
   const dismiss = useMutation({
     mutationFn: (id: string) => dismissThroughline(id),
@@ -45,43 +54,27 @@ export function Scratchpad() {
       await queryClient.cancelQueries({ queryKey: SPARK_KEY });
       queryClient.setQueryData(SPARK_KEY, null);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: SPARK_KEY });
-    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: SPARK_KEY }),
   });
 
+  // Capture → a scratch. Short one-paragraph captures segment silently; longer
+  // sessions open the review so the writer curates the split (spec §3).
   const capture = useMutation({
-    mutationFn: (content: string) =>
-      createSnippet({ content, sourceMode: "freewrite" }),
-
-    // Optimistic: the words appear the instant you capture them.
-    onMutate: async (content: string) => {
-      await queryClient.cancelQueries({ queryKey: SNIPPETS_KEY });
-      const previous =
-        queryClient.getQueryData<SnippetDTO[]>(SNIPPETS_KEY) ?? [];
-      const optimistic: SnippetDTO = {
-        id: `optimistic-${Date.now()}`,
-        content,
-        createdAt: new Date().toISOString(),
-        sourceMode: "freewrite",
-        wordCount: wordCount(content),
-      };
-      queryClient.setQueryData<SnippetDTO[]>(SNIPPETS_KEY, [
-        optimistic,
-        ...previous,
-      ]);
-      return { previous };
-    },
-    onError: (_err, _content, ctx) => {
-      if (ctx?.previous) {
-        queryClient.setQueryData(SNIPPETS_KEY, ctx.previous);
+    mutationFn: (content: string) => createScratch(content, "freewrite"),
+    onSuccess: async ({ id, suggestion }) => {
+      if (suggestion.snippets.length <= 1) {
+        await commitSnippets(id, suggestion.scratchLabel, suggestion.snippets);
+        afterChange();
+      } else {
+        setReview({ scratchId: id, suggestion });
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: SNIPPETS_KEY });
-      queryClient.invalidateQueries({ queryKey: SPARK_KEY });
-    },
   });
+
+  async function openSegment(scratchId: string) {
+    const suggestion = await fetchSuggestion(scratchId);
+    setReview({ scratchId, suggestion });
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-10">
@@ -126,13 +119,26 @@ export function Scratchpad() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {review && (
+          <SegmentationReview
+            scratchId={review.scratchId}
+            suggestion={review.suggestion}
+            onDone={() => {
+              setReview(null);
+              afterChange();
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="mb-6 h-px w-full bg-border" />
 
       <section className="flex-1">
         {isLoading ? (
           <p className="py-16 text-center text-sm text-faint">Loading…</p>
         ) : (
-          <SnippetList snippets={snippets} />
+          <ScratchList scratches={scratches} onSegment={openSegment} />
         )}
       </section>
     </main>

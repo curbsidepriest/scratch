@@ -13,6 +13,7 @@
     "ranker:check": "tsx tools/ranker-check.ts",
     "promote:check": "node tools/promote-check.mjs",
     "modes:check": "node tools/modes-check.mjs",
+    "scratch:check": "node tools/scratch-check.mjs",
     "sparks:clear": "tsx tools/clear-sparks.ts",
     "postinstall": "prisma generate"
   },

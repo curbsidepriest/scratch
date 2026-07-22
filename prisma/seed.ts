@@ -6,61 +6,111 @@ const adapter = new PrismaBetterSqlite3({
 });
 const prisma = new PrismaClient({ adapter });
 
-// A handful of fake snippets (spec §10.1). Deliberately shaped with some
-// recurrence + a contrast so the Ranker stub (Phase 4) has "aliveness" to find,
-// while most are plain notes so the spark stays rare.
-const SNIPPETS: { content: string; sourceMode: string }[] = [
+const wc = (t: string) => (t.trim() === "" ? 0 : t.trim().split(/\s+/).length);
+
+// Seed scratches (raw sessions), each with its extracted paragraph snippets.
+// The "dump" session recurs on speed/depth across its snippets so the Ranker
+// has a live thread to surface; the rest are mundane, keeping the spark rare.
+const SCRATCHES: {
+  label: string;
+  sourceMode: string;
+  snippets: { content: string; label: string }[];
+}[] = [
   {
-    content:
-      "Everyone keeps telling me to ship faster. But the pieces I'm proud of are the ones I sat with for weeks. Speed and depth keep pulling against each other.",
+    label: "speed vs depth, and what's underneath",
     sourceMode: "dump",
+    snippets: [
+      {
+        content:
+          "Everyone keeps telling me to ship faster. But the pieces I'm proud of are the ones I sat with for weeks. Speed and depth keep pulling against each other.",
+        label: "shipping fast vs sitting with it",
+      },
+      {
+        content:
+          "Reread what I wrote about speed vs depth. I don't actually believe fast is worse. Fast is how you find the thing worth going deep on. The contrast might be false.",
+        label: "fast is how you find the thing",
+      },
+      {
+        content:
+          "Third time coming back to this: the tension isn't speed vs depth, it's momentum vs avoidance. Depth I choose is different from depth I hide in.",
+        label: "momentum vs avoidance",
+      },
+    ],
   },
   {
-    content:
-      "Grocery list: oat milk, coffee, the good bread, lemons. Also call the dentist.",
-    sourceMode: "quick_capture",
-  },
-  {
-    content:
-      "Reread what I wrote about speed vs depth. I don't actually believe fast is worse. Fast is how you find the thing worth going deep on. The contrast might be false.",
+    label: "craft as fear",
     sourceMode: "freewrite",
+    snippets: [
+      {
+        content:
+          "There's a version of craft that's just fear wearing a nice coat. Slowing down because you're scared to be seen, not because the work needs it.",
+        label: "craft as fear wearing a coat",
+      },
+    ],
   },
   {
-    content:
-      "Meeting notes: Q3 roadmap, move the onboarding epic up, ask design about the empty states.",
+    label: "groceries + dentist",
     sourceMode: "quick_capture",
+    snippets: [
+      {
+        content:
+          "Grocery list: oat milk, coffee, the good bread, lemons. Also call the dentist.",
+        label: "groceries, dentist",
+      },
+    ],
   },
   {
-    content:
-      "There's a version of craft that's just fear wearing a nice coat. Slowing down because you're scared to be seen, not because the work needs it.",
-    sourceMode: "dump",
-  },
-  {
-    content:
-      "Third time coming back to this: the tension isn't speed vs depth, it's momentum vs avoidance. Depth I choose is different from depth I hide in.",
-    sourceMode: "freewrite",
-  },
-  {
-    content: "Weather's finally turning. Ran by the river. Nothing to report.",
+    label: "Q3 roadmap notes",
     sourceMode: "quick_capture",
+    snippets: [
+      {
+        content:
+          "Meeting notes: Q3 roadmap, move the onboarding epic up, ask design about the empty states.",
+        label: "roadmap, onboarding, empty states",
+      },
+    ],
+  },
+  {
+    label: "river run",
+    sourceMode: "quick_capture",
+    snippets: [
+      {
+        content: "Weather's finally turning. Ran by the river. Nothing to report.",
+        label: "weather, river run",
+      },
+    ],
   },
 ];
 
 async function main() {
-  // Idempotent-ish: only seed when empty, so re-running doesn't pile up dupes.
-  const existing = await prisma.snippet.count();
+  const existing = await prisma.scratch.count();
   if (existing > 0) {
-    console.log(`Snippets already present (${existing}); skipping seed.`);
+    console.log(`Scratches already present (${existing}); skipping seed.`);
     return;
   }
 
-  for (const s of SNIPPETS) {
-    const wordCount = s.content.trim().split(/\s+/).length;
-    await prisma.snippet.create({
-      data: { content: s.content, sourceMode: s.sourceMode, wordCount },
+  for (const sc of SCRATCHES) {
+    const content = sc.snippets.map((s) => s.content).join("\n\n");
+    const scratch = await prisma.scratch.create({
+      data: {
+        content,
+        label: sc.label,
+        sourceMode: sc.sourceMode,
+        wordCount: wc(content),
+      },
+    });
+    await prisma.snippet.createMany({
+      data: sc.snippets.map((s, i) => ({
+        content: s.content,
+        label: s.label,
+        order: i,
+        scratchId: scratch.id,
+        sourceMode: sc.sourceMode,
+        wordCount: wc(s.content),
+      })),
     });
   }
-  console.log(`Seeded ${SNIPPETS.length} snippets.`);
+  console.log(`Seeded ${SCRATCHES.length} scratches.`);
 }
 
 main()

@@ -3,13 +3,15 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createSnippet } from "@/lib/api";
+import { createScratch } from "@/lib/api";
 import { wordCount } from "@/lib/domain";
+import type { SegmentSuggestion } from "@/lib/types";
+import { SegmentationReview } from "./SegmentationReview";
 
 const DURATIONS = [10, 20, 30] as const;
 const DEFAULT_MINUTES = 20;
 
-type Phase = "setup" | "running";
+type Phase = "setup" | "running" | "review";
 
 function formatClock(totalSeconds: number): string {
   const s = Math.max(0, totalSeconds);
@@ -24,6 +26,16 @@ export function DumpSession() {
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [minutes, setMinutes] = useState<number>(DEFAULT_MINUTES);
+  const [review, setReview] = useState<{
+    scratchId: string;
+    suggestion: SegmentSuggestion;
+  } | null>(null);
+
+  function goHome() {
+    queryClient.invalidateQueries({ queryKey: ["scratches"] });
+    queryClient.invalidateQueries({ queryKey: ["spark"] });
+    router.push("/");
+  }
 
   if (phase === "setup") {
     return (
@@ -36,16 +48,29 @@ export function DumpSession() {
     );
   }
 
+  if (phase === "review" && review) {
+    // The dump becomes a scratch; the writer curates its split (spec §3/§4).
+    return (
+      <SegmentationReview
+        scratchId={review.scratchId}
+        suggestion={review.suggestion}
+        onDone={goHome}
+      />
+    );
+  }
+
   return (
     <Running
       minutes={minutes}
       onDone={async (text) => {
         const trimmed = text.trim();
-        if (trimmed !== "") {
-          await createSnippet({ content: trimmed, sourceMode: "dump" });
-          await queryClient.invalidateQueries({ queryKey: ["snippets"] });
+        if (trimmed === "") {
+          router.push("/");
+          return;
         }
-        router.push("/");
+        const { id, suggestion } = await createScratch(trimmed, "dump");
+        setReview({ scratchId: id, suggestion });
+        setPhase("review");
       }}
     />
   );

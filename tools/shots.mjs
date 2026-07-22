@@ -23,7 +23,7 @@ await page.waitForTimeout(400);
 await page.screenshot({ path: `${OUT}/01-scratchpad.png` });
 check("scratchpad renders composer", await page.locator("textarea").count() > 0);
 check(
-  "scratchpad shows seeded snippets",
+  "home lists scratch cards",
   (await page.locator("article").count()) >= 7,
   `${await page.locator("article").count()} cards`,
 );
@@ -45,24 +45,7 @@ if (await spark.count()) {
   await spark.screenshot({ path: `${OUT}/05-spark.png` });
 }
 
-// Snippets are editable in place, and edits persist.
-const firstCard = page.locator("article").first();
-const editMark = `edited${Date.now()}`;
-await firstCard.hover();
-await firstCard.getByRole("button", { name: "Edit snippet" }).click({ force: true });
-const editTa = firstCard.locator("textarea");
-await editTa.click();
-await editTa.press("End");
-await editTa.type(` ${editMark}`);
-await page.locator("h1").first().click(); // blur → commit
-await page.waitForTimeout(900);
-check("snippet edit shows immediately", (await firstCard.innerText()).includes(editMark));
-await page.reload({ waitUntil: "networkidle" });
-await page.waitForTimeout(600);
-check(
-  "snippet edit persists after reload",
-  (await page.locator("article").first().innerText()).includes(editMark),
-);
+// (Snippet editing in place is covered by scratch-check.mjs on the new home.)
 
 // Dismiss ("Not now") should make it disappear.
 await page.getByRole("button", { name: "Not now" }).click();

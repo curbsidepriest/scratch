@@ -3,9 +3,31 @@
 export interface SnippetDTO {
   id: string;
   content: string;
+  label?: string | null;
   createdAt: string;
   sourceMode: string;
   wordCount: number;
+}
+
+/** A raw writing session, with its extracted snippets nested under it. */
+export interface ScratchDTO {
+  id: string;
+  content: string;
+  label: string | null;
+  sourceMode: string;
+  wordCount: number;
+  createdAt: string;
+  snippets: SnippetDTO[];
+}
+
+export interface SegmentedSnippetDTO {
+  content: string;
+  label: string;
+}
+
+export interface SegmentSuggestion {
+  scratchLabel: string;
+  snippets: SegmentedSnippetDTO[];
 }
 
 export interface SparkEvidenceDTO {

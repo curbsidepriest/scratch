@@ -3,6 +3,8 @@ import type {
   LintFlagDTO,
   ProjectDTO,
   RelevantResponse,
+  ScratchDTO,
+  SegmentSuggestion,
   SnippetDTO,
   SparkDTO,
 } from "./types";
@@ -11,6 +13,48 @@ export async function fetchSnippets(): Promise<SnippetDTO[]> {
   const res = await fetch("/api/snippets");
   if (!res.ok) throw new Error("Failed to load snippets");
   return res.json();
+}
+
+// --- Scratches (raw sessions) + segmentation ---
+
+export async function fetchScratches(): Promise<ScratchDTO[]> {
+  const res = await fetch("/api/scratches");
+  if (!res.ok) throw new Error("Failed to load scratches");
+  return res.json();
+}
+
+export async function createScratch(
+  content: string,
+  sourceMode: string,
+): Promise<{ id: string; suggestion: SegmentSuggestion }> {
+  const res = await fetch("/api/scratches", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content, sourceMode }),
+  });
+  if (!res.ok) throw new Error("Failed to save scratch");
+  return res.json();
+}
+
+export async function fetchSuggestion(
+  scratchId: string,
+): Promise<SegmentSuggestion> {
+  const res = await fetch(`/api/scratches/${scratchId}/suggestion`);
+  if (!res.ok) throw new Error("Failed to load suggestion");
+  return res.json();
+}
+
+export async function commitSnippets(
+  scratchId: string,
+  scratchLabel: string,
+  snippets: { content: string; label: string }[],
+): Promise<void> {
+  const res = await fetch(`/api/scratches/${scratchId}/snippets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scratchLabel, snippets }),
+  });
+  if (!res.ok) throw new Error("Failed to save snippets");
 }
 
 export async function updateSnippet(id: string, content: string): Promise<void> {

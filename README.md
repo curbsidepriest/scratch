@@ -11,8 +11,17 @@ invariants (§9).
   schema, real migrations
 - Route Handlers under `src/app/api/*` for the backend
 
-All LLM behaviour will live behind a swappable service interface (stubbed for
-v1); no code path can generate pasteable prose.
+All LLM behaviour lives behind swappable service interfaces (stubbed for v1):
+**Ranker** (the spark), **Linter** (Architect gaps + Editor flags), and
+**Segmenter** (split a session into paragraph snippets + descriptive labels).
+No code path can generate pasteable prose.
+
+## Scratches vs snippets
+
+A **Scratch** is a raw writing session (a dump or freewrite), stored whole and
+preserved as the source. The user reviews a suggested paragraph split (human in
+the loop) to extract **Snippets** — paragraph-sized units with short descriptive
+labels. Snippets are the working currency the Ranker/promotion/modes operate on.
 
 ## Getting started
 
