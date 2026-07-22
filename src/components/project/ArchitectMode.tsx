@@ -7,6 +7,7 @@ import { useState } from "react";
 import {
   createBlock,
   deleteBlock,
+  removeBlockSnippet,
   updateBlock,
   updateSnippet,
   writeProjectSnippet,
@@ -109,17 +110,20 @@ function BlockCard({
   const [draft, setDraft] = useState("");
 
   const patch = useMutation({
-    mutationFn: (p: { label?: string; snippetId?: string | null }) =>
-      updateBlock(block.id, p),
+    mutationFn: (p: { label?: string }) => updateBlock(block.id, p),
     onSettled: onChange,
   });
   const remove = useMutation({
     mutationFn: () => deleteBlock(block.id),
     onSettled: onChange,
   });
-  const editFill = useMutation({
-    mutationFn: (content: string) =>
-      updateSnippet(block.snippet!.id, content),
+  const editSnippet = useMutation({
+    mutationFn: (a: { snippetId: string; content: string }) =>
+      updateSnippet(a.snippetId, a.content),
+    onSettled: onChange,
+  });
+  const unfill = useMutation({
+    mutationFn: (snippetId: string) => removeBlockSnippet(block.id, snippetId),
     onSettled: onChange,
   });
   const write = useMutation({
@@ -182,21 +186,34 @@ function BlockCard({
             </div>
           )}
 
-          {block.snippet ? (
-            <div className="mt-2 rounded-md border-l-2 border-emerald-500 bg-background px-3 py-2">
-              <EditableSnippet
-                content={block.snippet.content}
-                onSave={(next) => editFill.mutateAsync(next)}
-                textClassName="text-[13px] leading-snug text-muted"
-              />
-              <button
-                onClick={() => patch.mutate({ snippetId: null })}
-                className="mt-1 text-[11px] text-faint hover:text-muted"
-              >
-                remove fill
-              </button>
+          {/* The snippets filling this block (a block can hold many). */}
+          {block.snippets.length > 0 && (
+            <div className="mt-2 flex flex-col gap-1.5">
+              {block.snippets.map((s) => (
+                <div
+                  key={s.id}
+                  className="group/snip rounded-md border-l-2 border-emerald-500 bg-background px-3 py-2"
+                >
+                  <EditableSnippet
+                    content={s.content}
+                    onSave={(next) =>
+                      editSnippet.mutateAsync({ snippetId: s.id, content: next })
+                    }
+                    textClassName="text-[13px] leading-snug text-muted"
+                  />
+                  <button
+                    onClick={() => unfill.mutate(s.id)}
+                    className="mt-1 text-[11px] text-faint hover:text-muted"
+                  >
+                    remove
+                  </button>
+                </div>
+              ))}
             </div>
-          ) : writing ? (
+          )}
+
+          {/* Always available: drag another snippet in, or write new copy. */}
+          {writing ? (
             <div className="mt-2">
               <textarea
                 autoFocus
@@ -231,7 +248,9 @@ function BlockCard({
             </div>
           ) : (
             <div className="mt-2 rounded-md border border-dashed border-border px-3 py-2 text-xs text-faint">
-              Drag a snippet here, or{" "}
+              {block.snippets.length > 0
+                ? "Drag another snippet here, or "
+                : "Drag a snippet here, or "}
               <button
                 onClick={() => setWriting(true)}
                 className="underline decoration-dotted hover:text-muted"

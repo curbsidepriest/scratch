@@ -48,20 +48,28 @@ const claim = page.locator("article", { hasText: "Argument: why depth matters" }
 check("added block is present", (await claim.count()) >= 1);
 check("gap flag surfaced on claim", (await claim.getByText(/needs support/).count()) >= 1);
 
+async function bankCount() {
+  const t = await page.getByText(/Bank/).first().innerText();
+  const m = t.match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
 // Write new copy straight into the block → new snippet fills it + joins bank.
+const bankBefore = await bankCount();
 await claim.getByRole("button", { name: "write new copy" }).click();
 await claim.locator("textarea").fill("Depth is a choice, not a hiding place. That distinction is the whole piece.");
 await claim.getByRole("button", { name: "Save as snippet" }).click();
 await page.waitForTimeout(600);
-check("write-new-copy fills the block", (await claim.getByText("remove fill").count()) >= 1);
-check("new copy became a bank snippet (blob)", (await page.getByText(/Bank · 4/).count()) === 1);
+check("write-new-copy fills the block", (await claim.getByRole("button", { name: "remove" }).count()) >= 1);
+check("new copy became a bank snippet (blob)", (await bankCount()) === bankBefore + 1);
 
-// Drag a bank snippet onto the "Body" block.
-const grip = page.getByRole("button", { name: "Drag onto a block" }).first();
+// Drag bank snippets onto the "Body" block — a block can hold MANY.
 const bodyBlock = page.locator("article", { hasText: "Body" }).first();
-const g = await grip.boundingBox();
-const b = await bodyBlock.boundingBox();
-if (g && b) {
+async function dragGripToBody(n) {
+  const grip = page.getByRole("button", { name: "Drag onto a block" }).nth(n);
+  const g = await grip.boundingBox();
+  const b = await bodyBlock.boundingBox();
+  if (!g || !b) return;
   await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
   await page.mouse.down();
   await page.mouse.move(g.x + 30, g.y + 12, { steps: 6 });
@@ -70,7 +78,14 @@ if (g && b) {
   await page.mouse.up();
   await page.waitForTimeout(700);
 }
-check("drag-to-fill fills the Body block", (await bodyBlock.getByText("remove fill").count()) >= 1);
+await dragGripToBody(0);
+check("drag-to-fill fills the Body block", (await bodyBlock.getByRole("button", { name: "remove" }).count()) >= 1);
+await dragGripToBody(1);
+check(
+  "a block can hold multiple snippets",
+  (await bodyBlock.getByRole("button", { name: "remove" }).count()) >= 2,
+  `${await bodyBlock.getByRole("button", { name: "remove" }).count()} in Body`,
+);
 await page.screenshot({ path: `${OUT}/09-architect.png` });
 
 // --- Editor ---
@@ -85,8 +100,16 @@ await page.waitForTimeout(800);
 check("linter surfaces a flag", (await page.getByText(/does it need support/).count()) >= 1);
 await page.screenshot({ path: `${OUT}/10-editor.png` });
 await page.getByRole("button", { name: /Acknowledge/ }).first().click();
-await page.waitForTimeout(600);
-check("acknowledge dismisses the flag", (await page.getByText(/does it need support/).count()) === 0);
+let dismissed = false;
+try {
+  await page.waitForFunction(
+    () => !document.body.innerText.includes("does it need support"),
+    null,
+    { timeout: 4000 },
+  );
+  dismissed = true;
+} catch {}
+check("acknowledge dismisses the flag", dismissed);
 
 await browser.close();
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILED`}`);

@@ -14,7 +14,7 @@ import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
-import { fetchBlocks, fetchProject, reorderBlocks, updateBlock } from "@/lib/api";
+import { addBlockSnippet, fetchBlocks, fetchProject, reorderBlocks } from "@/lib/api";
 import { BankSidebar } from "./BankSidebar";
 import { EditablePhrase } from "./project/EditablePhrase";
 import { ModeTabs, type Mode } from "./project/ModeTabs";
@@ -41,7 +41,7 @@ export function ProjectShell({ id }: { id: string }) {
 
   const fill = useMutation({
     mutationFn: (a: { blockId: string; snippetId: string }) =>
-      updateBlock(a.blockId, { snippetId: a.snippetId }),
+      addBlockSnippet(a.blockId, a.snippetId),
     onSettled: invalidateBlocks,
   });
   const reorder = useMutation({

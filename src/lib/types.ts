@@ -59,7 +59,7 @@ export interface BlockDTO {
   order: number;
   parentBlockId: string | null;
   kind: string;
-  snippet: { id: string; content: string } | null;
+  snippets: { id: string; content: string }[];
   gap: string | null;
 }
 

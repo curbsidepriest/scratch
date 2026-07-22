@@ -11,7 +11,12 @@ export async function GET(
   const blocks = await prisma.block.findMany({
     where: { projectId: id },
     orderBy: { order: "asc" },
-    include: { snippet: true },
+    include: {
+      blockSnippets: {
+        orderBy: { order: "asc" },
+        include: { snippet: true },
+      },
+    },
   });
 
   const linter = getLinterService();
@@ -20,7 +25,7 @@ export async function GET(
       id: b.id,
       label: b.label,
       body: b.body,
-      filled: b.snippetId !== null,
+      filled: b.blockSnippets.length > 0,
     })),
   );
   const gapByBlock = new Map(gaps.map((g) => [g.blockId, g.reason]));
@@ -33,9 +38,10 @@ export async function GET(
       order: b.order,
       parentBlockId: b.parentBlockId,
       kind: b.kind,
-      snippet: b.snippet
-        ? { id: b.snippet.id, content: b.snippet.content }
-        : null,
+      snippets: b.blockSnippets.map((bs) => ({
+        id: bs.snippet.id,
+        content: bs.snippet.content,
+      })),
       gap: gapByBlock.get(b.id) ?? null,
     })),
   );

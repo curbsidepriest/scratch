@@ -48,10 +48,22 @@ export async function POST(
       },
     });
     if (typeof blockId === "string" && blockId !== "") {
-      await tx.block.updateMany({
+      const block = await tx.block.findFirst({
         where: { id: blockId, projectId },
-        data: { snippetId: created.id, kind: "filled" },
       });
+      if (block) {
+        const last = await tx.blockSnippet.findFirst({
+          where: { blockId },
+          orderBy: { order: "desc" },
+        });
+        await tx.blockSnippet.create({
+          data: {
+            blockId,
+            snippetId: created.id,
+            order: (last?.order ?? -1) + 1,
+          },
+        });
+      }
     }
     return created;
   });

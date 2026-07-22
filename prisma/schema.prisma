@@ -26,7 +26,7 @@ model Snippet {
   // relations
   evidence        Evidence[]
   projectSnippets ProjectSnippet[]
-  filledBlocks    Block[] // blocks this snippet was dragged in to fill
+  blockSnippets   BlockSnippet[] // blocks this snippet fills (shared, many-to-many)
 
   @@index([createdAt])
   @@map("snippets")
@@ -107,17 +107,33 @@ model Block {
   order         Int     @map("sort_order")
   parentBlockId String? @map("parent_block_id")
   kind          String  @default("placeholder") // "placeholder" | "filled"
-  snippetId     String? @map("snippet_id") // optional snippet dragged in to fill
 
-  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  parent    Block?     @relation("BlockChildren", fields: [parentBlockId], references: [id], onDelete: Cascade)
-  children  Block[]    @relation("BlockChildren")
-  snippet   Snippet?   @relation(fields: [snippetId], references: [id])
-  lintFlags LintFlag[]
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent        Block?         @relation("BlockChildren", fields: [parentBlockId], references: [id], onDelete: Cascade)
+  children      Block[]        @relation("BlockChildren")
+  blockSnippets BlockSnippet[] // the snippets filling this block, ordered
+  lintFlags     LintFlag[]
 
   @@index([projectId])
   @@index([parentBlockId])
   @@map("blocks")
+}
+
+/// Join: a snippet placed into a block. A block can hold many snippets; a
+/// snippet can fill many blocks (shared, never moved/copied). `order` is its
+/// position within the block.
+model BlockSnippet {
+  id        String @id @default(cuid())
+  blockId   String @map("block_id")
+  snippetId String @map("snippet_id")
+  order     Int    @default(0) @map("sort_order")
+
+  block   Block   @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  snippet Snippet @relation(fields: [snippetId], references: [id])
+
+  @@unique([blockId, snippetId])
+  @@index([blockId])
+  @@map("block_snippets")
 }
 
 /// Editor semantic-linter flag (spec §8c). Surfaces an observation; the only

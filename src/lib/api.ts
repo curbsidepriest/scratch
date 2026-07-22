@@ -121,7 +121,7 @@ export async function createBlock(
 
 export async function updateBlock(
   id: string,
-  patch: { label?: string; body?: string | null; snippetId?: string | null },
+  patch: { label?: string; body?: string | null },
 ): Promise<void> {
   const res = await fetch(`/api/blocks/${id}`, {
     method: "PATCH",
@@ -129,6 +129,30 @@ export async function updateBlock(
     body: JSON.stringify(patch),
   });
   if (!res.ok) throw new Error("Failed to update block");
+}
+
+export async function addBlockSnippet(
+  blockId: string,
+  snippetId: string,
+): Promise<void> {
+  const res = await fetch(`/api/blocks/${blockId}/snippets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ snippetId }),
+  });
+  if (!res.ok) throw new Error("Failed to add snippet to block");
+}
+
+export async function removeBlockSnippet(
+  blockId: string,
+  snippetId: string,
+): Promise<void> {
+  const res = await fetch(`/api/blocks/${blockId}/snippets`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ snippetId }),
+  });
+  if (!res.ok) throw new Error("Failed to remove snippet from block");
 }
 
 export async function deleteBlock(id: string): Promise<void> {

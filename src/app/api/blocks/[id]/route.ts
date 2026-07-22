@@ -21,28 +21,15 @@ export async function PATCH(
   } catch {
     body = {};
   }
-  const { label, body: text, snippetId } = body as {
+  const { label, body: text } = body as {
     label?: unknown;
     body?: unknown;
-    snippetId?: unknown;
   };
 
-  const data: {
-    label?: string;
-    body?: string | null;
-    snippetId?: string | null;
-    kind?: string;
-  } = {};
+  const data: { label?: string; body?: string | null } = {};
   if (typeof label === "string" && label.trim() !== "") data.label = label.trim();
   if (typeof text === "string") data.body = text;
   if (text === null) data.body = null;
-  if (typeof snippetId === "string") {
-    data.snippetId = snippetId;
-    data.kind = "filled";
-  } else if (snippetId === null) {
-    data.snippetId = null;
-    data.kind = "placeholder";
-  }
 
   const updated = await prisma.block.update({ where: { id }, data });
   return NextResponse.json({ id: updated.id });
