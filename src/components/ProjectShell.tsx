@@ -204,13 +204,14 @@ export function ProjectShell({ id }: { id: string }) {
             )}
           </section>
 
-          {/* The bank is a permanent column only outside the Editor; in the
-              Editor the writing is front and centre and snippets are pulled in. */}
-          {mode !== "editor" && (
+          {/* The bank is a permanent column only in Architect, where it's the
+              drag source for filling blocks. Filter already lists every snippet
+              (active + benched), and the Editor pulls snippets in on demand. */}
+          {mode === "architect" && (
             <BankSidebar
               projectId={project.id}
               snippets={project.snippets}
-              draggable={mode === "architect"}
+              draggable
             />
           )}
         </div>
