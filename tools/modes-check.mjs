@@ -80,39 +80,59 @@ async function dragGripToBody(n) {
 }
 await dragGripToBody(0);
 check("drag-to-fill fills the Body block", (await bodyBlock.getByRole("button", { name: "remove" }).count()) >= 1);
-await dragGripToBody(1);
+
+// Write two DISTINCT snippets into Body (so order changes are detectable — the
+// dev bank has many identical blobs from prior test runs).
+async function writeInBody(text) {
+  await bodyBlock.getByRole("button", { name: "write new copy" }).click();
+  await bodyBlock.locator("textarea").fill(text);
+  await bodyBlock.getByRole("button", { name: "Save as snippet" }).click();
+  await page.waitForTimeout(500);
+}
+await writeInBody("AAA alpha distinctive marker for ordering checks.");
+await writeInBody("ZZZ omega distinctive marker for ordering checks.");
 check(
   "a block can hold multiple snippets",
-  (await bodyBlock.getByRole("button", { name: "remove" }).count()) >= 2,
+  (await bodyBlock.getByRole("button", { name: "remove" }).count()) >= 3,
   `${await bodyBlock.getByRole("button", { name: "remove" }).count()} in Body`,
 );
 await page.screenshot({ path: `${OUT}/09-architect.png` });
 
-// Reorder the two snippets WITHIN the Body block.
+// Reorder within the Body block (keyboard drag = deterministic): move the last
+// snippet (ZZZ) up above AAA.
 const orderBefore = await bodyBlock.locator("p").allInnerTexts();
 const snipGrips = bodyBlock.getByRole("button", { name: "Drag to reorder snippet" });
-const s1 = await snipGrips.nth(1).boundingBox();
-const s0 = await snipGrips.nth(0).boundingBox();
-if (s1 && s0) {
-  await page.mouse.move(s1.x + s1.width / 2, s1.y + s1.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(s1.x + 8, s1.y - 6, { steps: 5 });
-  await page.mouse.move(s0.x + s0.width / 2, s0.y - 4, { steps: 10 });
-  await page.mouse.move(s0.x + s0.width / 2, s0.y - 8, { steps: 4 });
-  await page.mouse.up();
-  await page.waitForTimeout(700);
-}
+await snipGrips.last().focus();
+await page.keyboard.press("Space");
+await page.waitForTimeout(200);
+await page.keyboard.press("ArrowUp");
+await page.waitForTimeout(200);
+await page.keyboard.press("Space");
+await page.waitForTimeout(700);
 const orderAfter = await bodyBlock.locator("p").allInnerTexts();
+const zBefore = orderBefore.findIndex((t) => t.includes("ZZZ"));
+const zAfter = orderAfter.findIndex((t) => t.includes("ZZZ"));
 check(
   "snippets reorder within a block",
-  JSON.stringify(orderBefore) !== JSON.stringify(orderAfter) &&
-    orderBefore.length === orderAfter.length,
-  `${orderBefore[0]?.slice(0, 12)}… → ${orderAfter[0]?.slice(0, 12)}…`,
+  zAfter >= 0 && zAfter < zBefore,
+  `ZZZ index ${zBefore} → ${zAfter}`,
 );
 
 // --- Editor ---
 await page.getByRole("button", { name: /Editor/ }).click();
 await page.waitForTimeout(300);
+
+// Compose a draft from the Architect arrangement (non-destructive).
+await page.getByRole("button", { name: "Compose from Architect" }).first().click();
+await page.waitForTimeout(800);
+const composed = await page.locator("textarea").first().inputValue();
+check("compose seeds the draft from Architect", composed.trim().length > 0, `${composed.length} chars`);
+check(
+  "composed draft contains arranged snippet text",
+  composed.includes("Depth is a choice") || composed.includes("speed") || composed.includes("AAA"),
+);
+await page.screenshot({ path: `${OUT}/14-editor-composed.png` });
+
 const draft =
   "The tension between speed and depth has shaped how I work for years now. " +
   "Obviously anyone who cares about craft should slow right down and refuse to ship anything at all quickly.";

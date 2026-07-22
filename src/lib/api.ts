@@ -255,6 +255,16 @@ export async function saveDraft(projectId: string, draft: string): Promise<void>
   if (!res.ok) throw new Error("Failed to save draft");
 }
 
+export async function composeDraft(
+  projectId: string,
+): Promise<{ draft: string }> {
+  const res = await fetch(`/api/projects/${projectId}/compose`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to compose draft");
+  return res.json();
+}
+
 export async function runLint(projectId: string): Promise<LintFlagDTO[]> {
   const res = await fetch(`/api/projects/${projectId}/lint`, { method: "POST" });
   if (!res.ok) throw new Error("Failed to lint");

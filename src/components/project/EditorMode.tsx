@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { runLint, saveDraft, setLintFlagStatus } from "@/lib/api";
+import { composeDraft, runLint, saveDraft, setLintFlagStatus } from "@/lib/api";
 import type { LintFlagDTO } from "@/lib/types";
 
 export function EditorMode({
@@ -15,6 +15,8 @@ export function EditorMode({
   const [flags, setFlags] = useState<LintFlagDTO[]>([]);
   const [checking, setChecking] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [confirmingCompose, setConfirmingCompose] = useState(false);
+  const [composing, setComposing] = useState(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
   // Only the most recent lint response may update the UI, so a slow/stale run
   // can't clobber a newer one (e.g. re-adding a just-acknowledged flag).
@@ -52,6 +54,23 @@ export function EditorMode({
     void check();
   }
 
+  async function compose() {
+    setConfirmingCompose(false);
+    setComposing(true);
+    try {
+      const { draft: next } = await composeDraft(projectId);
+      setDraft(next);
+      await check();
+    } finally {
+      setComposing(false);
+    }
+  }
+
+  function onComposeClick() {
+    if (draft.trim() !== "") setConfirmingCompose(true);
+    else void compose();
+  }
+
   // "Fix it myself" — jump to the flagged text so the writer can edit it. The
   // tool never supplies the fix (spec §8c).
   function fixMyself(quote: string) {
@@ -73,9 +92,50 @@ export function EditorMode({
           The sentences
         </h2>
         <p className="mb-4 text-sm text-muted">
-          Write the piece here. The linter points at what&apos;s off — it never
-          fixes it for you.
+          Write the piece here. Compose a starting draft from your Architect
+          arrangement, then connect and sharpen. The linter points at what&apos;s
+          off — it never fixes it for you.
         </p>
+
+        {confirmingCompose ? (
+          <div className="mb-3 rounded-lg border border-border bg-surface px-4 py-3 text-sm">
+            <p className="text-foreground">
+              Replace the current draft with a fresh compose from Architect?
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              Your Architect arrangement stays untouched — only this draft is
+              overwritten.
+            </p>
+            <div className="mt-3 flex items-center gap-4 text-xs">
+              <button
+                onClick={() => void compose()}
+                className="rounded-md bg-foreground px-3 py-1.5 font-medium text-background hover:opacity-90"
+              >
+                Replace draft
+              </button>
+              <button
+                onClick={() => setConfirmingCompose(false)}
+                className="text-faint hover:text-muted"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          draft.trim() === "" && (
+            <div className="mb-3 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-faint">
+              Nothing composed yet.{" "}
+              <button
+                onClick={onComposeClick}
+                className="underline decoration-dotted hover:text-foreground"
+              >
+                Compose from Architect
+              </button>{" "}
+              to release your arranged snippets into a draft.
+            </div>
+          )
+        )}
+
         <textarea
           ref={textRef}
           value={draft}
@@ -86,7 +146,14 @@ export function EditorMode({
           placeholder="Start shaping the actual sentences…"
           className="min-h-[50vh] w-full resize-none rounded-lg border border-border bg-surface p-4 text-[15px] leading-relaxed text-foreground placeholder:text-faint focus:outline-none"
         />
-        <div className="mt-2 flex items-center gap-3 text-xs text-faint">
+        <div className="mt-2 flex items-center gap-4 text-xs text-faint">
+          <button
+            onClick={onComposeClick}
+            disabled={composing}
+            className="transition-colors hover:text-foreground disabled:opacity-50"
+          >
+            {composing ? "composing…" : "Compose from Architect"}
+          </button>
           <button
             onClick={() => void check()}
             className="transition-colors hover:text-foreground"
