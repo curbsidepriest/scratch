@@ -2,6 +2,7 @@ import type {
   BlockDTO,
   LintFlagDTO,
   ProjectDTO,
+  ProjectSummaryDTO,
   RelevantResponse,
   ScratchDTO,
   SegmentSuggestion,
@@ -66,6 +67,18 @@ export async function updateSnippet(id: string, content: string): Promise<void> 
   if (!res.ok) throw new Error("Failed to update snippet");
 }
 
+export async function setSnippetArchived(
+  id: string,
+  archived: boolean,
+): Promise<void> {
+  const res = await fetch(`/api/snippets/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ archived }),
+  });
+  if (!res.ok) throw new Error("Failed to archive snippet");
+}
+
 export async function createSnippet(input: {
   content: string;
   sourceMode?: string;
@@ -92,6 +105,18 @@ export async function dismissThroughline(id: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to dismiss");
 }
 
+export async function createThroughline(
+  phrase: string,
+): Promise<{ id: string }> {
+  const res = await fetch("/api/throughlines", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phrase }),
+  });
+  if (!res.ok) throw new Error("Failed to create through-line");
+  return res.json();
+}
+
 export async function fetchRelevant(
   throughlineId: string,
 ): Promise<RelevantResponse> {
@@ -110,6 +135,12 @@ export async function promoteThroughline(
     body: JSON.stringify({ snippetIds }),
   });
   if (!res.ok) throw new Error("Failed to promote");
+  return res.json();
+}
+
+export async function fetchProjects(): Promise<ProjectSummaryDTO[]> {
+  const res = await fetch("/api/projects");
+  if (!res.ok) throw new Error("Failed to load pieces");
   return res.json();
 }
 

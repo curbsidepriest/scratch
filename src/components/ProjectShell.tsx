@@ -158,12 +158,14 @@ export function ProjectShell({ id }: { id: string }) {
       className="mx-auto w-full max-w-5xl flex-1 px-6 py-10"
     >
       <header className="mb-8">
-        <Link
-          href="/"
-          className="text-xs text-faint transition-colors hover:text-foreground"
-        >
-          ← Scratch
-        </Link>
+        <div className="flex items-center gap-4 text-xs text-faint">
+          <Link href="/" className="transition-colors hover:text-foreground">
+            ← Scratch
+          </Link>
+          <Link href="/pieces" className="transition-colors hover:text-foreground">
+            Pieces
+          </Link>
+        </div>
         <div className="mt-4 text-[11px] uppercase tracking-wider text-faint">
           The piece
         </div>
@@ -194,15 +196,23 @@ export function ProjectShell({ id }: { id: string }) {
               <ArchitectMode projectId={project.id} blocks={blocks} />
             )}
             {mode === "editor" && (
-              <EditorMode projectId={project.id} initialDraft={project.draft} />
+              <EditorMode
+                projectId={project.id}
+                initialDraft={project.draft}
+                snippets={project.snippets.filter((s) => s.included)}
+              />
             )}
           </section>
 
-          <BankSidebar
-            projectId={project.id}
-            snippets={project.snippets}
-            draggable={mode === "architect"}
-          />
+          {/* The bank is a permanent column only outside the Editor; in the
+              Editor the writing is front and centre and snippets are pulled in. */}
+          {mode !== "editor" && (
+            <BankSidebar
+              projectId={project.id}
+              snippets={project.snippets}
+              draggable={mode === "architect"}
+            />
+          )}
         </div>
       </DndContext>
     </motion.main>

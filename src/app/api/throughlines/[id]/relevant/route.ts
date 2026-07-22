@@ -22,6 +22,7 @@ export async function GET(
   }
 
   const snippets = await prisma.snippet.findMany({
+    where: { archived: false }, // don't offer archived snippets in the picker (§3)
     orderBy: { createdAt: "desc" },
   });
 
@@ -43,6 +44,7 @@ export async function GET(
     return {
       id: s.id,
       content: s.content,
+      label: s.label,
       createdAt: s.createdAt,
       sourceMode: s.sourceMode,
       wordCount: s.wordCount,

@@ -41,6 +41,7 @@ export async function GET(
       snippets: b.blockSnippets.map((bs) => ({
         id: bs.snippet.id,
         content: bs.snippet.content,
+        label: bs.snippet.label,
       })),
       gap: gapByBlock.get(b.id) ?? null,
     })),

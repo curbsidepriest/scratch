@@ -44,6 +44,7 @@ export async function GET() {
   if (active) return NextResponse.json(serialize(active));
 
   const snippets = await prisma.snippet.findMany({
+    where: { archived: false }, // archived snippets are out of consideration (§3)
     orderBy: { createdAt: "asc" },
   });
 

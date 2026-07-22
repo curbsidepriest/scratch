@@ -8,12 +8,13 @@ import { useState } from "react";
 import {
   createScratch,
   commitSnippets,
+  createThroughline,
   dismissThroughline,
   fetchScratches,
   fetchSpark,
   fetchSuggestion,
 } from "@/lib/api";
-import type { SegmentSuggestion, SparkDTO } from "@/lib/types";
+import type { SegmentSuggestion } from "@/lib/types";
 import { Composer } from "./Composer";
 import { ScratchList } from "./ScratchList";
 import { Spark } from "./Spark";
@@ -27,7 +28,12 @@ export function Scratchpad() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const [promoting, setPromoting] = useState<SparkDTO | null>(null);
+  const [promoting, setPromoting] = useState<{
+    throughlineId: string;
+    phrase: string;
+  } | null>(null);
+  const [startingPiece, setStartingPiece] = useState(false);
+  const [startPhrase, setStartPhrase] = useState("");
   const [review, setReview] = useState<{
     scratchId: string;
     suggestion: SegmentSuggestion;
@@ -76,28 +82,80 @@ export function Scratchpad() {
     setReview({ scratchId, suggestion });
   }
 
+  async function beginOwnPiece() {
+    const phrase = startPhrase.trim();
+    if (phrase === "") return;
+    const { id } = await createThroughline(phrase);
+    setStartingPiece(false);
+    setStartPhrase("");
+    setPromoting({ throughlineId: id, phrase });
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-10">
       <header className="mb-8 flex items-center justify-between">
         <h1 className="text-sm font-medium tracking-wide text-muted">Scratch</h1>
-        <Link
-          href="/dump"
-          className="text-xs text-faint transition-colors hover:text-foreground"
-        >
-          Timed dump →
-        </Link>
+        <nav className="flex items-center gap-4 text-xs text-faint">
+          <button
+            onClick={() => setStartingPiece((v) => !v)}
+            className="transition-colors hover:text-foreground"
+          >
+            Start a piece
+          </button>
+          <Link href="/pieces" className="transition-colors hover:text-foreground">
+            Pieces
+          </Link>
+          <Link href="/dump" className="transition-colors hover:text-foreground">
+            Timed dump →
+          </Link>
+        </nav>
       </header>
 
       <section className="mb-10">
         <Composer onCapture={(content) => capture.mutate(content)} />
       </section>
 
+      {startingPiece && (
+        <div className="mb-10 rounded-lg border border-border bg-surface p-4">
+          <label className="mb-2 block text-[11px] uppercase tracking-wider text-faint">
+            What&apos;s the piece about? (your through-line — territory, not a title)
+          </label>
+          <input
+            autoFocus
+            value={startPhrase}
+            onChange={(e) => setStartPhrase(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void beginOwnPiece();
+              if (e.key === "Escape") setStartingPiece(false);
+            }}
+            placeholder="e.g. how you keep mistaking avoidance for care"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-faint focus:outline-none"
+          />
+          <div className="mt-3 flex items-center gap-4">
+            <button
+              onClick={() => void beginOwnPiece()}
+              className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+            >
+              Pick snippets →
+            </button>
+            <button
+              onClick={() => setStartingPiece(false)}
+              className="text-xs text-faint transition-colors hover:text-muted"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <AnimatePresence>
         {spark && (
           <div className="mb-10">
             <Spark
               spark={spark}
-              onDevelop={() => setPromoting(spark)}
+              onDevelop={() =>
+                setPromoting({ throughlineId: spark.id, phrase: spark.phrase })
+              }
               onDismiss={() => dismiss.mutate(spark.id)}
               dismissing={dismiss.isPending}
             />
@@ -108,7 +166,7 @@ export function Scratchpad() {
       <AnimatePresence>
         {promoting && (
           <PromotionOverlay
-            throughlineId={promoting.id}
+            throughlineId={promoting.throughlineId}
             phrase={promoting.phrase}
             onCancel={() => setPromoting(null)}
             onPromoted={(projectId) => {

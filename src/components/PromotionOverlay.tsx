@@ -33,18 +33,18 @@ export function PromotionOverlay({
     queryFn: () => fetchRelevant(throughlineId),
   });
 
-  const suggested = useMemo(
-    () => (data?.snippets ?? []).filter((s) => s.suggested),
-    [data],
-  );
+  // All snippets, suggested first (the API sorts them). The user picks freely —
+  // essential when there's no spark and nothing is suggested.
+  const all = useMemo(() => data?.snippets ?? [], [data]);
 
   const [kept, setKept] = useState<Set<string>>(new Set());
   const [creating, setCreating] = useState(false);
 
-  // Default to keeping everything suggested, once loaded.
+  // Default to keeping everything the Ranker suggested, once loaded.
   useEffect(() => {
+    const suggested = all.filter((s) => s.suggested);
     if (suggested.length > 0) setKept(new Set(suggested.map((s) => s.id)));
-  }, [suggested]);
+  }, [all]);
 
   function toggle(id: string) {
     setKept((prev) => {
@@ -87,59 +87,58 @@ export function PromotionOverlay({
         </div>
         <p className="text-lg leading-relaxed text-foreground">{phrase}</p>
         <p className="mt-3 text-sm text-muted">
-          Pull in what belongs. Nothing is moved — these stay in your Scratchpad
-          and can feed another piece later.
+          Pick what belongs. Nothing is moved — these stay in your Scratchpad and
+          can feed another piece later.
         </p>
 
-        <div className="mt-6 flex flex-col gap-2">
+        <div className="mt-6 flex max-h-[46vh] flex-col gap-2 overflow-y-auto pr-1">
           {isLoading && (
             <p className="py-6 text-center text-sm text-faint">
-              Gathering what relates…
+              Gathering your snippets…
             </p>
           )}
-          {!isLoading && suggested.length === 0 && (
+          {!isLoading && all.length === 0 && (
             <p className="py-6 text-center text-sm text-faint">
-              Nothing pulled in automatically — you can add snippets once
-              inside.
+              No snippets yet — write something first.
             </p>
           )}
-          {suggested.map((s, i) => {
+          {all.map((s) => {
             const on = kept.has(s.id);
             return (
-              <motion.button
+              <button
                 key={s.id}
                 type="button"
                 onClick={() => toggle(s.id)}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 + i * 0.06, duration: 0.35 }}
                 className={`rounded-lg border px-4 py-3 text-left transition-colors ${
-                  on
-                    ? "border-accent/40 bg-background"
-                    : "border-border bg-transparent opacity-50"
+                  on ? "border-accent/40 bg-background" : "border-border bg-transparent opacity-60"
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <span
                     className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] ${
-                      on
-                        ? "border-accent bg-accent text-background"
-                        : "border-faint text-transparent"
+                      on ? "border-accent bg-accent text-background" : "border-faint text-transparent"
                     }`}
                     aria-hidden
                   >
                     ✓
                   </span>
                   <span className="min-w-0">
+                    {s.label && (
+                      <span className="mb-0.5 block text-[10px] uppercase tracking-wider text-faint">
+                        {s.label}
+                      </span>
+                    )}
                     <span className="block text-sm text-foreground">
                       {excerpt(s.content)}
                     </span>
-                    <span className="mt-1 block text-xs text-faint">
-                      {s.reason}
-                    </span>
+                    {s.suggested && s.reason && (
+                      <span className="mt-1 block text-xs text-faint">
+                        {s.reason}
+                      </span>
+                    )}
                   </span>
                 </div>
-              </motion.button>
+              </button>
             );
           })}
         </div>

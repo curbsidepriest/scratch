@@ -54,6 +54,11 @@ function BankItem({
           </button>
         )}
         <div className="min-w-0 flex-1">
+          {ps.snippet.label && (
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-faint">
+              {ps.snippet.label}
+            </div>
+          )}
           {expanded && editable ? (
             <EditableSnippet
               content={ps.snippet.content}

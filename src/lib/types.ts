@@ -4,6 +4,7 @@ export interface SnippetDTO {
   id: string;
   content: string;
   label?: string | null;
+  archived?: boolean;
   createdAt: string;
   sourceMode: string;
   wordCount: number;
@@ -74,6 +75,16 @@ export interface ProjectDTO {
   snippets: ProjectSnippetDTO[];
 }
 
+export interface ProjectSummaryDTO {
+  id: string;
+  phrase: string;
+  title: string | null;
+  snippetCount: number;
+  draftWords: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface BlockDTO {
   id: string;
   label: string;
@@ -81,7 +92,7 @@ export interface BlockDTO {
   order: number;
   parentBlockId: string | null;
   kind: string;
-  snippets: { id: string; content: string }[];
+  snippets: { id: string; content: string; label?: string | null }[];
   gap: string | null;
 }
 

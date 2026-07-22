@@ -278,7 +278,7 @@ function SnippetRow({
   onRemove,
 }: {
   blockId: string;
-  snippet: { id: string; content: string };
+  snippet: { id: string; content: string; label?: string | null };
   onEdit: (content: string) => Promise<void> | void;
   onRemove: () => void;
 }) {
@@ -307,6 +307,11 @@ function SnippetRow({
         ⠿
       </button>
       <div className="min-w-0 flex-1">
+        {snippet.label && (
+          <div className="mb-1 text-[11px] uppercase tracking-wider text-faint">
+            {snippet.label}
+          </div>
+        )}
         <EditableSnippet
           content={snippet.content}
           onSave={onEdit}

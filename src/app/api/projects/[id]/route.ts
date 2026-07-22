@@ -64,6 +64,7 @@ export async function GET(
       snippet: {
         id: ps.snippet.id,
         content: ps.snippet.content,
+        label: ps.snippet.label,
         createdAt: ps.snippet.createdAt,
         sourceMode: ps.snippet.sourceMode,
         wordCount: ps.snippet.wordCount,

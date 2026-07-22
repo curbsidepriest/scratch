@@ -139,6 +139,10 @@ const draft =
 await page.locator("textarea").first().fill(draft);
 await page.getByRole("button", { name: "Re-check" }).click();
 await page.waitForTimeout(800);
+// Flags now live behind a toggle (editor is front-and-centre) — open it.
+check("flags toggle shows a count", (await page.getByRole("button", { name: /Flags\s*1/ }).count()) >= 1);
+await page.getByRole("button", { name: /^Flags/ }).click();
+await page.waitForTimeout(300);
 check("linter surfaces a flag", (await page.getByText(/does it need support/).count()) >= 1);
 await page.screenshot({ path: `${OUT}/10-editor.png` });
 await page.getByRole("button", { name: /Acknowledge/ }).first().click();

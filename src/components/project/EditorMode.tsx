@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { composeDraft, runLint, saveDraft, setLintFlagStatus } from "@/lib/api";
-import type { LintFlagDTO } from "@/lib/types";
+import type { LintFlagDTO, ProjectSnippetDTO } from "@/lib/types";
 
 export function EditorMode({
   projectId,
   initialDraft,
+  snippets,
 }: {
   projectId: string;
   initialDraft: string;
+  snippets: ProjectSnippetDTO[];
 }) {
   const [draft, setDraft] = useState(initialDraft);
   const [flags, setFlags] = useState<LintFlagDTO[]>([]);
@@ -17,9 +19,9 @@ export function EditorMode({
   const [touched, setTouched] = useState(false);
   const [confirmingCompose, setConfirmingCompose] = useState(false);
   const [composing, setComposing] = useState(false);
+  const [showFlags, setShowFlags] = useState(false);
+  const [showSnippets, setShowSnippets] = useState(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
-  // Only the most recent lint response may update the UI, so a slow/stale run
-  // can't clobber a newer one (e.g. re-adding a just-acknowledged flag).
   const runSeq = useRef(0);
 
   const check = useCallback(async () => {
@@ -34,13 +36,11 @@ export function EditorMode({
     }
   }, [projectId, draft]);
 
-  // Lint once on open (in case a draft already exists).
   useEffect(() => {
     void check();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Debounced re-check as the writer edits.
   useEffect(() => {
     if (!touched) return;
     const t = setTimeout(() => void check(), 1200);
@@ -50,8 +50,19 @@ export function EditorMode({
   async function acknowledge(id: string) {
     setFlags((prev) => prev.filter((f) => f.id !== id));
     await setLintFlagStatus(id, "acknowledged");
-    // Re-lint now that it's dismissed; with unchanged text it won't re-raise.
     void check();
+  }
+
+  function fixMyself(quote: string) {
+    const el = textRef.current;
+    if (!el) return;
+    const idx = el.value.indexOf(quote.slice(0, 40));
+    el.focus();
+    if (idx >= 0) {
+      el.setSelectionRange(idx, idx + quote.length);
+      const ratio = idx / Math.max(1, el.value.length);
+      el.scrollTop = ratio * el.scrollHeight - el.clientHeight / 2;
+    }
   }
 
   async function compose() {
@@ -65,39 +76,75 @@ export function EditorMode({
       setComposing(false);
     }
   }
-
   function onComposeClick() {
     if (draft.trim() !== "") setConfirmingCompose(true);
     else void compose();
   }
 
-  // "Fix it myself" — jump to the flagged text so the writer can edit it. The
-  // tool never supplies the fix (spec §8c).
-  function fixMyself(quote: string) {
+  // Pull a snippet into the draft at the cursor — the writer's own words,
+  // released into the prose they're actively shaping.
+  function insertSnippet(content: string) {
     const el = textRef.current;
-    if (!el) return;
-    const idx = el.value.indexOf(quote.slice(0, 40));
-    el.focus();
-    if (idx >= 0) {
-      el.setSelectionRange(idx, idx + quote.length);
-      const ratio = idx / Math.max(1, el.value.length);
-      el.scrollTop = ratio * el.scrollHeight - el.clientHeight / 2;
-    }
+    const pos = el ? el.selectionStart : draft.length;
+    const before = draft.slice(0, pos);
+    const after = draft.slice(pos);
+    const sep = before && !before.endsWith("\n\n") ? "\n\n" : "";
+    const next = `${before}${sep}${content}${after}`;
+    setDraft(next);
+    setTouched(true);
+    requestAnimationFrame(() => {
+      if (el) {
+        el.focus();
+        const caret = (before + sep + content).length;
+        el.setSelectionRange(caret, caret);
+      }
+    });
   }
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row">
+    <div className="flex gap-6">
       <div className="min-w-0 flex-1">
-        <h2 className="mb-1 text-[11px] uppercase tracking-wider text-faint">
-          The sentences
-        </h2>
-        <p className="mb-4 text-sm text-muted">
-          Write the piece here. Compose a starting draft from your Architect
-          arrangement, then connect and sharpen. The linter points at what&apos;s
-          off — it never fixes it for you.
-        </p>
+        <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <h2 className="mr-auto text-[11px] uppercase tracking-wider text-faint">
+            The sentences
+          </h2>
+          <button
+            onClick={onComposeClick}
+            disabled={composing}
+            className="text-xs text-muted transition-colors hover:text-foreground disabled:opacity-50"
+          >
+            {composing ? "composing…" : "Compose from Architect"}
+          </button>
+          <button
+            onClick={() => void check()}
+            className="text-xs text-muted transition-colors hover:text-foreground"
+          >
+            {checking ? "checking…" : "Re-check"}
+          </button>
+          <button
+            onClick={() => setShowSnippets((v) => !v)}
+            className={`text-xs transition-colors hover:text-foreground ${
+              showSnippets ? "text-foreground" : "text-muted"
+            }`}
+          >
+            Snippets
+          </button>
+          <button
+            onClick={() => setShowFlags((v) => !v)}
+            className={`flex items-center gap-1.5 text-xs transition-colors hover:text-foreground ${
+              showFlags ? "text-foreground" : "text-muted"
+            }`}
+          >
+            Flags
+            {flags.length > 0 && (
+              <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-500">
+                {flags.length}
+              </span>
+            )}
+          </button>
+        </div>
 
-        {confirmingCompose ? (
+        {confirmingCompose && (
           <div className="mb-3 rounded-lg border border-border bg-surface px-4 py-3 text-sm">
             <p className="text-foreground">
               Replace the current draft with a fresh compose from Architect?
@@ -121,19 +168,19 @@ export function EditorMode({
               </button>
             </div>
           </div>
-        ) : (
-          draft.trim() === "" && (
-            <div className="mb-3 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-faint">
-              Nothing composed yet.{" "}
-              <button
-                onClick={onComposeClick}
-                className="underline decoration-dotted hover:text-foreground"
-              >
-                Compose from Architect
-              </button>{" "}
-              to release your arranged snippets into a draft.
-            </div>
-          )
+        )}
+
+        {draft.trim() === "" && !confirmingCompose && (
+          <div className="mb-3 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-faint">
+            Nothing composed yet.{" "}
+            <button
+              onClick={onComposeClick}
+              className="underline decoration-dotted hover:text-foreground"
+            >
+              Compose from Architect
+            </button>{" "}
+            to release your arranged snippets into a draft, or just start typing.
+          </div>
         )}
 
         <textarea
@@ -144,65 +191,98 @@ export function EditorMode({
             setTouched(true);
           }}
           placeholder="Start shaping the actual sentences…"
-          className="min-h-[50vh] w-full resize-none rounded-lg border border-border bg-surface p-4 text-[15px] leading-relaxed text-foreground placeholder:text-faint focus:outline-none"
+          className="min-h-[68vh] w-full resize-none rounded-lg border border-border bg-surface p-5 text-[16px] leading-relaxed text-foreground placeholder:text-faint focus:outline-none"
         />
-        <div className="mt-2 flex items-center gap-4 text-xs text-faint">
-          <button
-            onClick={onComposeClick}
-            disabled={composing}
-            className="transition-colors hover:text-foreground disabled:opacity-50"
-          >
-            {composing ? "composing…" : "Compose from Architect"}
-          </button>
-          <button
-            onClick={() => void check()}
-            className="transition-colors hover:text-foreground"
-          >
-            Re-check
-          </button>
-          {checking && <span>checking…</span>}
-        </div>
       </div>
 
-      <aside className="w-full shrink-0 lg:w-80">
-        <h3 className="mb-3 text-[11px] uppercase tracking-wider text-faint">
-          Flags {flags.length > 0 && `· ${flags.length}`}
-        </h3>
-        {flags.length === 0 ? (
-          <p className="text-sm text-faint">
-            Quiet for now. The linter stays out of the way until there&apos;s
-            enough to react to.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {flags.map((f) => (
-              <li
-                key={f.id}
-                className="rounded-lg border border-l-2 border-border border-l-amber-500 bg-surface px-4 py-3"
-              >
-                <p className="text-sm text-foreground">{f.reason}</p>
-                <p className="mt-2 border-l border-border pl-2 text-xs italic text-faint">
-                  {f.quote.length > 100 ? `${f.quote.slice(0, 100)}…` : f.quote}
-                </p>
-                <div className="mt-3 flex items-center gap-4 text-xs">
-                  <button
-                    onClick={() => fixMyself(f.quote)}
-                    className="text-muted transition-colors hover:text-foreground"
-                  >
-                    Fix it myself
-                  </button>
-                  <button
-                    onClick={() => acknowledge(f.id)}
-                    className="text-faint transition-colors hover:text-muted"
-                  >
-                    Acknowledge &amp; dismiss
-                  </button>
-                </div>
+      {showSnippets && (
+        <aside className="w-72 shrink-0">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-[11px] uppercase tracking-wider text-faint">
+              Snippets
+            </h3>
+            <button
+              onClick={() => setShowSnippets(false)}
+              className="text-[11px] text-faint hover:text-muted"
+            >
+              close
+            </button>
+          </div>
+          <p className="mb-3 text-xs text-faint">Click to drop into the draft.</p>
+          <ul className="flex flex-col gap-2">
+            {snippets.map((ps) => (
+              <li key={ps.snippet.id}>
+                <button
+                  onClick={() => insertSnippet(ps.snippet.content)}
+                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-left transition-colors hover:border-accent/50"
+                >
+                  {ps.snippet.label && (
+                    <span className="mb-1 block text-[10px] uppercase tracking-wider text-faint">
+                      {ps.snippet.label}
+                    </span>
+                  )}
+                  <span className="line-clamp-3 text-xs leading-snug text-muted">
+                    {ps.snippet.content}
+                  </span>
+                </button>
               </li>
             ))}
+            {snippets.length === 0 && (
+              <li className="text-xs text-faint">No snippets in this piece.</li>
+            )}
           </ul>
-        )}
-      </aside>
+        </aside>
+      )}
+
+      {showFlags && (
+        <aside className="w-80 shrink-0">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-[11px] uppercase tracking-wider text-faint">
+              Flags {flags.length > 0 && `· ${flags.length}`}
+            </h3>
+            <button
+              onClick={() => setShowFlags(false)}
+              className="text-[11px] text-faint hover:text-muted"
+            >
+              close
+            </button>
+          </div>
+          {flags.length === 0 ? (
+            <p className="text-sm text-faint">
+              Quiet for now. The linter stays out of the way until there&apos;s
+              enough to react to.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {flags.map((f) => (
+                <li
+                  key={f.id}
+                  className="rounded-lg border border-l-2 border-border border-l-amber-500 bg-surface px-4 py-3"
+                >
+                  <p className="text-sm text-foreground">{f.reason}</p>
+                  <p className="mt-2 border-l border-border pl-2 text-xs italic text-faint">
+                    {f.quote.length > 100 ? `${f.quote.slice(0, 100)}…` : f.quote}
+                  </p>
+                  <div className="mt-3 flex items-center gap-4 text-xs">
+                    <button
+                      onClick={() => fixMyself(f.quote)}
+                      className="text-muted transition-colors hover:text-foreground"
+                    >
+                      Fix it myself
+                    </button>
+                    <button
+                      onClick={() => acknowledge(f.id)}
+                      className="text-faint transition-colors hover:text-muted"
+                    >
+                      Acknowledge &amp; dismiss
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+      )}
     </div>
   );
 }

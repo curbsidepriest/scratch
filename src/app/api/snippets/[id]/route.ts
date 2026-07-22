@@ -21,18 +21,32 @@ export async function PATCH(
   } catch {
     body = {};
   }
-  const content = (body as { content?: unknown }).content;
-  if (typeof content !== "string" || content.trim() === "") {
-    return NextResponse.json({ error: "content is required" }, { status: 400 });
+  const { content, archived } = body as {
+    content?: unknown;
+    archived?: unknown;
+  };
+
+  const data: { content?: string; wordCount?: number; archived?: boolean } = {};
+  if (typeof content === "string") {
+    if (content.trim() === "") {
+      return NextResponse.json({ error: "content cannot be empty" }, { status: 400 });
+    }
+    data.content = content;
+    data.wordCount = wordCount(content);
+  }
+  // Archiving takes a snippet out of the active consideration set (§3). It is
+  // never destroyed and can be unarchived.
+  if (typeof archived === "boolean") data.archived = archived;
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "nothing to update" }, { status: 400 });
   }
 
-  const updated = await prisma.snippet.update({
-    where: { id },
-    data: { content, wordCount: wordCount(content) },
-  });
+  const updated = await prisma.snippet.update({ where: { id }, data });
   return NextResponse.json({
     id: updated.id,
     content: updated.content,
     wordCount: updated.wordCount,
+    archived: updated.archived,
   });
 }

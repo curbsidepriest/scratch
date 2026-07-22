@@ -10,7 +10,9 @@ export type SourceMode = (typeof SOURCE_MODES)[number];
 export const THROUGHLINE_ORIGINS = ["ranker", "user"] as const;
 export type ThroughlineOrigin = (typeof THROUGHLINE_ORIGINS)[number];
 
-export const THROUGHLINE_STATUSES = ["surfaced", "dismissed", "promoted"] as const;
+// "draft" = a user-started through-line waiting in the piece picker; the Ranker
+// spark only ever shows "surfaced", so drafts never masquerade as sparks.
+export const THROUGHLINE_STATUSES = ["surfaced", "dismissed", "promoted", "draft"] as const;
 export type ThroughlineStatus = (typeof THROUGHLINE_STATUSES)[number];
 
 export const BLOCK_KINDS = ["placeholder", "filled"] as const;

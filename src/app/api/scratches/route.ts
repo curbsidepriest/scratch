@@ -22,6 +22,7 @@ export async function GET() {
         content: sn.content,
         label: sn.label,
         order: sn.order,
+        archived: sn.archived,
         createdAt: sn.createdAt,
         sourceMode: sn.sourceMode,
         wordCount: sn.wordCount,

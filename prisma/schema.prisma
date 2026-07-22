@@ -40,6 +40,7 @@ model Snippet {
   label      String? // few descriptive words on what's in the paragraph
   order      Int      @default(0) @map("sort_order") // position within its scratch
   scratchId  String?  @map("scratch_id")
+  archived   Boolean  @default(false) // out of the active consideration set (§3)
   createdAt  DateTime @default(now()) @map("created_at")
   sourceMode String   @map("source_mode") // mirrors the scratch's mode
   wordCount  Int      @map("word_count")
@@ -93,6 +94,7 @@ model Project {
   title         String? // user-set, optional, deferred
   draft         String   @default("") // Editor working text (spec §8c)
   createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
 
   throughline     Throughline      @relation(fields: [throughlineId], references: [id])
   projectSnippets ProjectSnippet[]
