@@ -23,6 +23,14 @@ const STOPWORDS = new Set([
   "know", "dont", "cant", "wont", "isnt", "time", "times", "come", "coming",
   "came", "goes", "going", "gets", "getting", "make", "made", "want", "need",
   "needs", "work", "works", "each", "other", "others", "down", "onto", "upon",
+  // filler / hedge / vague adverbs — not "territory", so keep them out of the
+  // salient terms (otherwise realistic prose surfaces "actually" over "depth").
+  "actually", "really", "maybe", "perhaps", "probably", "usually", "honestly",
+  "genuinely", "obviously", "clearly", "pretty", "quite", "kind", "sort",
+  "guess", "mean", "means", "meant", "every", "always", "never", "feels",
+  "feel", "felt", "look", "looks", "first", "second", "third", "single",
+  "whole", "entire", "versus", "supposed", "possibly", "least", "most",
+  "usually", "myself", "again", "around", "along", "sitting", "gets",
 ]);
 
 // Markers of tension/charge — a thread that pulls against itself is "alive".
