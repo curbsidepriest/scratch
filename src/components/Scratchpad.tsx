@@ -16,6 +16,7 @@ import {
 } from "@/lib/api";
 import type { SegmentSuggestion } from "@/lib/types";
 import { Composer } from "./Composer";
+import { Wordmark } from "./Wordmark";
 import { ScratchList } from "./ScratchList";
 import { Spark } from "./Spark";
 import { PromotionOverlay } from "./PromotionOverlay";
@@ -93,20 +94,29 @@ export function Scratchpad() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-10">
-      <header className="mb-8 flex items-center justify-between">
-        <h1 className="text-sm font-medium tracking-wide text-muted">Scratch</h1>
-        <nav className="flex items-center gap-4 text-xs text-faint">
+      <header className="mb-8 flex items-center justify-between gap-4">
+        <Wordmark />
+        <nav className="flex items-center gap-3">
+          {/* Library — navigation, set apart from the creative actions. */}
+          <Link
+            href="/pieces"
+            className="text-xs text-faint transition-colors hover:text-foreground"
+          >
+            Pieces
+          </Link>
+          <span className="h-4 w-px bg-border" aria-hidden />
+          {/* Actions — begin writing / start a piece. */}
           <button
             onClick={() => setStartingPiece((v) => !v)}
-            className="transition-colors hover:text-foreground"
+            className="rounded-full border border-border px-3.5 py-1.5 text-xs text-muted transition-colors hover:border-accent hover:text-foreground"
           >
             Start a piece
           </button>
-          <Link href="/pieces" className="transition-colors hover:text-foreground">
-            Pieces
-          </Link>
-          <Link href="/dump" className="transition-colors hover:text-foreground">
-            Timed dump →
+          <Link
+            href="/dump"
+            className="rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
+          >
+            Just write
           </Link>
         </nav>
       </header>
