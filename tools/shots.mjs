@@ -84,6 +84,13 @@ check(
 // Back to a timed session for the forward-only + countdown checks.
 await page.getByRole("button", { name: "A time" }).click();
 await page.waitForTimeout(150);
+// Custom value option reveals a number input.
+await page.getByRole("button", { name: "Custom" }).first().click();
+await page.waitForTimeout(150);
+check("custom value reveals a number input", (await page.locator('input[type="number"]').count()) >= 1);
+await page.screenshot({ path: `${OUT}/21-dump-custom.png` });
+await page.getByRole("button", { name: "20 min" }).click();
+await page.waitForTimeout(150);
 
 // --- Dump running + forward-only assertion ---
 await page.getByRole("button", { name: "Begin" }).click();

@@ -120,6 +120,76 @@ function Segmented<T extends string | number>({
   );
 }
 
+/** Preset chips plus a "Custom" chip that reveals a number input. */
+function ValuePicker({
+  presets,
+  value,
+  onChange,
+  unit,
+  min,
+}: {
+  presets: readonly number[];
+  value: number;
+  onChange: (v: number) => void;
+  unit: string;
+  min: number;
+}) {
+  const [custom, setCustom] = useState(!presets.includes(value));
+
+  return (
+    <div>
+      <div className="inline-flex overflow-hidden rounded-lg border border-border">
+        {presets.map((p) => {
+          const on = !custom && value === p;
+          return (
+            <button
+              key={p}
+              onClick={() => {
+                setCustom(false);
+                onChange(p);
+              }}
+              className={`px-5 py-2 text-sm transition-colors ${
+                on
+                  ? "bg-foreground text-background"
+                  : "bg-surface text-muted hover:text-foreground"
+              }`}
+            >
+              {p} {unit}
+            </button>
+          );
+        })}
+        <button
+          onClick={() => setCustom(true)}
+          className={`px-5 py-2 text-sm transition-colors ${
+            custom
+              ? "bg-foreground text-background"
+              : "bg-surface text-muted hover:text-foreground"
+          }`}
+        >
+          Custom
+        </button>
+      </div>
+
+      {custom && (
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="number"
+            min={min}
+            value={value}
+            autoFocus
+            onChange={(e) => {
+              const n = parseInt(e.target.value, 10);
+              if (!Number.isNaN(n)) onChange(Math.max(min, n));
+            }}
+            className="w-24 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none"
+          />
+          <span className="text-sm text-muted">{unit}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Setup({
   goal,
   setGoal,
@@ -165,21 +235,23 @@ function Setup({
         {goal === "time" ? (
           <>
             <div className="mb-2 text-xs text-faint">Duration</div>
-            <Segmented
-              options={DURATIONS}
+            <ValuePicker
+              presets={DURATIONS}
               value={minutes}
               onChange={setMinutes}
-              render={(m) => `${m} min`}
+              unit="min"
+              min={1}
             />
           </>
         ) : (
           <>
             <div className="mb-2 text-xs text-faint">Target</div>
-            <Segmented
-              options={WORD_TARGETS}
+            <ValuePicker
+              presets={WORD_TARGETS}
               value={wordTarget}
               onChange={setWordTarget}
-              render={(w) => `${w} words`}
+              unit="words"
+              min={10}
             />
           </>
         )}
