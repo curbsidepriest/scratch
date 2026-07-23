@@ -1,9 +1,9 @@
 // Scratch — data model (spec §7)
 //
-// NOTE ON ENUMS: SQLite does not support Prisma enums, so the enum-like fields
-// (sourceMode, origin, status, kind) are modelled as String with a documented
-// set of allowed values, enforced in the validation layer (see src/lib/domain).
-// When/if we migrate to Postgres, these can become real Prisma enums.
+// NOTE ON ENUMS: the enum-like fields (sourceMode, origin, status, kind) are
+// modelled as String with a documented set of allowed values, enforced in the
+// validation layer (see src/lib/domain). Kept as strings on Postgres too for
+// simplicity; they could be promoted to real Prisma enums later.
 
 generator client {
   provider = "prisma-client"
@@ -11,7 +11,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 /// A raw writing session — a 5–20 min dump or freewrite (spec §3/§4). Stored

@@ -2,12 +2,11 @@
 // model) in its own Scratch, so nothing is orphaned in the new home. Safe to
 // re-run — only touches snippets whose scratchId is null.
 // Run: npx tsx tools/backfill-scratches.ts
+import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL ?? "file:./dev.db",
-});
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
