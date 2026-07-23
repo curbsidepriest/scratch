@@ -9,8 +9,11 @@ import type { SegmentSuggestion } from "@/lib/types";
 import { SegmentationReview } from "./SegmentationReview";
 
 const DURATIONS = [10, 20, 30] as const;
+const WORD_TARGETS = [250, 500, 750] as const;
 const DEFAULT_MINUTES = 20;
+const DEFAULT_WORDS = 500;
 
+type Goal = "time" | "words";
 type Phase = "setup" | "running" | "review";
 
 function formatClock(totalSeconds: number): string {
@@ -25,7 +28,10 @@ export function DumpSession() {
   const queryClient = useQueryClient();
 
   const [phase, setPhase] = useState<Phase>("setup");
+  const [goal, setGoal] = useState<Goal>("time");
   const [minutes, setMinutes] = useState<number>(DEFAULT_MINUTES);
+  const [wordTarget, setWordTarget] = useState<number>(DEFAULT_WORDS);
+  const [noBackspace, setNoBackspace] = useState(true);
   const [review, setReview] = useState<{
     scratchId: string;
     suggestion: SegmentSuggestion;
@@ -40,8 +46,14 @@ export function DumpSession() {
   if (phase === "setup") {
     return (
       <Setup
+        goal={goal}
+        setGoal={setGoal}
         minutes={minutes}
-        onMinutes={setMinutes}
+        setMinutes={setMinutes}
+        wordTarget={wordTarget}
+        setWordTarget={setWordTarget}
+        noBackspace={noBackspace}
+        setNoBackspace={setNoBackspace}
         onBegin={() => setPhase("running")}
         onCancel={() => router.push("/")}
       />
@@ -49,7 +61,6 @@ export function DumpSession() {
   }
 
   if (phase === "review" && review) {
-    // The dump becomes a scratch; the writer curates its split (spec §3/§4).
     return (
       <SegmentationReview
         scratchId={review.scratchId}
@@ -61,7 +72,10 @@ export function DumpSession() {
 
   return (
     <Running
+      goal={goal}
       minutes={minutes}
+      wordTarget={wordTarget}
+      noBackspace={noBackspace}
       onDone={async (text) => {
         const trimmed = text.trim();
         if (trimmed === "") {
@@ -76,43 +90,119 @@ export function DumpSession() {
   );
 }
 
+function Segmented<T extends string | number>({
+  options,
+  value,
+  onChange,
+  render,
+}: {
+  options: readonly T[];
+  value: T;
+  onChange: (v: T) => void;
+  render: (v: T) => string;
+}) {
+  return (
+    <div className="inline-flex overflow-hidden rounded-lg border border-border">
+      {options.map((o) => (
+        <button
+          key={String(o)}
+          onClick={() => onChange(o)}
+          className={`px-5 py-2 text-sm transition-colors ${
+            value === o
+              ? "bg-foreground text-background"
+              : "bg-surface text-muted hover:text-foreground"
+          }`}
+        >
+          {render(o)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Setup({
+  goal,
+  setGoal,
   minutes,
-  onMinutes,
+  setMinutes,
+  wordTarget,
+  setWordTarget,
+  noBackspace,
+  setNoBackspace,
   onBegin,
   onCancel,
 }: {
+  goal: Goal;
+  setGoal: (g: Goal) => void;
   minutes: number;
-  onMinutes: (m: number) => void;
+  setMinutes: (m: number) => void;
+  wordTarget: number;
+  setWordTarget: (w: number) => void;
+  noBackspace: boolean;
+  setNoBackspace: (b: boolean) => void;
   onBegin: () => void;
   onCancel: () => void;
 }) {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
-      <h1 className="text-lg font-medium text-foreground">Timed dump</h1>
+      <h1 className="text-lg font-medium text-foreground">Focused write</h1>
       <p className="mt-3 text-sm leading-relaxed text-muted">
-        No going back. The timer runs, backspace is off, and you just write.
-        Whatever comes out lands in the Scratchpad when the time is up.
+        Pick a way to write and go. Whatever comes out lands in the Scratchpad
+        when you finish{noBackspace ? ", and there's no going back while you write" : ""}.
       </p>
 
       <div className="mt-8">
-        <div className="mb-2 text-xs text-faint">Duration</div>
-        <div className="inline-flex overflow-hidden rounded-lg border border-border">
-          {DURATIONS.map((m) => (
-            <button
-              key={m}
-              onClick={() => onMinutes(m)}
-              className={`px-5 py-2 text-sm transition-colors ${
-                minutes === m
-                  ? "bg-foreground text-background"
-                  : "bg-surface text-muted hover:text-foreground"
-              }`}
-            >
-              {m} min
-            </button>
-          ))}
-        </div>
+        <div className="mb-2 text-xs text-faint">Write toward</div>
+        <Segmented
+          options={["time", "words"] as const}
+          value={goal}
+          onChange={setGoal}
+          render={(g) => (g === "time" ? "A time" : "A word count")}
+        />
       </div>
+
+      <div className="mt-6">
+        {goal === "time" ? (
+          <>
+            <div className="mb-2 text-xs text-faint">Duration</div>
+            <Segmented
+              options={DURATIONS}
+              value={minutes}
+              onChange={setMinutes}
+              render={(m) => `${m} min`}
+            />
+          </>
+        ) : (
+          <>
+            <div className="mb-2 text-xs text-faint">Target</div>
+            <Segmented
+              options={WORD_TARGETS}
+              value={wordTarget}
+              onChange={setWordTarget}
+              render={(w) => `${w} words`}
+            />
+          </>
+        )}
+      </div>
+
+      <button
+        onClick={() => setNoBackspace(!noBackspace)}
+        className="mt-6 flex items-center gap-2.5 text-left"
+      >
+        <span
+          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
+            noBackspace
+              ? "border-accent bg-accent text-background"
+              : "border-faint text-transparent"
+          }`}
+          aria-hidden
+        >
+          ✓
+        </span>
+        <span className="text-sm text-muted">
+          No backspace <span className="text-faint">(forward only — just keep going)</span>
+        </span>
+      </button>
 
       <div className="mt-10 flex items-center gap-4">
         <button
@@ -133,14 +223,20 @@ function Setup({
 }
 
 function Running({
+  goal,
   minutes,
+  wordTarget,
+  noBackspace,
   onDone,
 }: {
+  goal: Goal;
   minutes: number;
+  wordTarget: number;
+  noBackspace: boolean;
   onDone: (text: string) => void;
 }) {
   const [text, setText] = useState("");
-  const [remaining, setRemaining] = useState(minutes * 60);
+  const [elapsed, setElapsed] = useState(0);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const startedAt = useRef<number>(Date.now());
   const finished = useRef(false);
@@ -153,46 +249,52 @@ function Running({
     onDone(textValue.current);
   }, [onDone]);
 
-  // Countdown, computed from the start time so it can't drift.
+  // Tick elapsed from the start time (drift-free). The goal is a SOFT signal —
+  // reaching it never force-stops; you can stay in flow and finish when ready.
   useEffect(() => {
-    const tick = () => {
-      const elapsed = Math.floor((Date.now() - startedAt.current) / 1000);
-      const left = minutes * 60 - elapsed;
-      setRemaining(left);
-      if (left <= 0) finish();
-    };
-    const id = setInterval(tick, 250);
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startedAt.current) / 1000));
+    }, 250);
     return () => clearInterval(id);
-  }, [minutes, finish]);
+  }, []);
 
   useEffect(() => {
     textRef.current?.focus();
   }, []);
 
-  // Forward-only enforcement: accept a change ONLY if it purely appends to the
-  // current text. This single rule blocks backspace, delete, cut, and both
-  // select-to-replace and mid-string paste — no way to go back (spec §4).
+  // Forward-only enforcement (only when enabled): accept a change ONLY if it
+  // purely appends — blocks backspace, delete, cut, select-replace, mid-paste.
   function onChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const next = e.target.value;
-    if (next.length >= text.length && next.startsWith(text)) {
+    if (!noBackspace || (next.length >= text.length && next.startsWith(text))) {
       setText(next);
     }
   }
-
-  // Crisp feedback: swallow the delete keys outright so the caret never jumps.
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Backspace" || e.key === "Delete") {
+    if (noBackspace && (e.key === "Backspace" || e.key === "Delete")) {
       e.preventDefault();
     }
   }
 
   const count = wordCount(text);
+  const remaining = minutes * 60 - elapsed;
+  const timeUp = goal === "time" && remaining <= 0;
+  const wordsReached = goal === "words" && count >= wordTarget;
+  const reached = timeUp || wordsReached;
 
   return (
     <main className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-10">
-      {/* Unobtrusive countdown. */}
-      <div className="pointer-events-none fixed right-6 top-6 z-10 tabular-nums text-sm text-faint">
-        {formatClock(remaining)}
+      {/* Unobtrusive goal indicator. */}
+      <div
+        className={`pointer-events-none fixed right-6 top-6 z-10 tabular-nums text-sm ${
+          reached ? "text-amber-600 dark:text-amber-500" : "text-faint"
+        }`}
+      >
+        {goal === "time"
+          ? timeUp
+            ? "time's up"
+            : formatClock(remaining)
+          : `${count} / ${wordTarget}`}
       </div>
 
       <textarea
@@ -200,20 +302,31 @@ function Running({
         value={text}
         onChange={onChange}
         onKeyDown={onKeyDown}
-        onCut={(e) => e.preventDefault()}
+        onCut={(e) => noBackspace && e.preventDefault()}
         placeholder="Go."
         className="min-h-[60vh] flex-1 resize-none bg-transparent text-lg leading-relaxed text-foreground placeholder:text-faint focus:outline-none"
       />
 
-      <div className="mt-4 flex items-center justify-between text-xs text-faint">
+      {reached && (
+        <div className="mt-4 text-xs text-amber-600 dark:text-amber-500">
+          {timeUp ? "Time's up." : "You've hit your target."} Keep going if
+          you&apos;re in flow, or finish when you&apos;re ready.
+        </div>
+      )}
+
+      <div className="mt-2 flex items-center justify-between text-xs text-faint">
         <span className="tabular-nums">
-          {count > 0 ? `${count} word${count === 1 ? "" : "s"}` : " "}
+          {goal === "time"
+            ? count > 0
+              ? `${count} word${count === 1 ? "" : "s"}`
+              : " "
+            : formatClock(elapsed)}
         </span>
         <button
           onClick={finish}
           className="text-faint transition-colors hover:text-muted"
         >
-          end &amp; save
+          finish &amp; save
         </button>
       </div>
     </main>

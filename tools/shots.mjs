@@ -70,6 +70,20 @@ check(
   "dump setup shows duration options",
   (await page.getByRole("button", { name: "20 min" }).count()) === 1,
 );
+// Word-count goal is available.
+await page.getByRole("button", { name: "A word count" }).click();
+await page.waitForTimeout(200);
+check(
+  "word-count goal offers a target",
+  (await page.getByRole("button", { name: "500 words" }).count()) === 1,
+);
+check(
+  "no-backspace is an option",
+  (await page.getByText(/No backspace/).count()) === 1,
+);
+// Back to a timed session for the forward-only + countdown checks.
+await page.getByRole("button", { name: "A time" }).click();
+await page.waitForTimeout(150);
 
 // --- Dump running + forward-only assertion ---
 await page.getByRole("button", { name: "Begin" }).click();
