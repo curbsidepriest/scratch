@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createScratch } from "@/lib/api";
+import { createScratch, evaluateSpark } from "@/lib/api";
 import { wordCount } from "@/lib/domain";
 import type { SegmentSuggestion } from "@/lib/types";
 import { SegmentationReview } from "./SegmentationReview";
@@ -37,8 +37,13 @@ export function DumpSession() {
     suggestion: SegmentSuggestion;
   } | null>(null);
 
-  function goHome() {
+  async function goHome() {
     queryClient.invalidateQueries({ queryKey: ["scratches"] });
+    try {
+      await evaluateSpark(); // the session's snippets may have surfaced a thread
+    } catch {
+      // ignore — the home will still load
+    }
     queryClient.invalidateQueries({ queryKey: ["spark"] });
     router.push("/");
   }

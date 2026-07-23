@@ -1,6 +1,7 @@
 import type { LinterService } from "./types";
 import { StubLinterService } from "./stub";
 import { AnthropicLinterService } from "./anthropic";
+import { llmEnabled } from "../anthropic";
 
 export type {
   LinterService,
@@ -10,8 +11,5 @@ export type {
 } from "./types";
 
 export function getLinterService(): LinterService {
-  if (process.env.LINTER_IMPL === "anthropic") {
-    return new AnthropicLinterService();
-  }
-  return new StubLinterService();
+  return llmEnabled() ? new AnthropicLinterService() : new StubLinterService();
 }

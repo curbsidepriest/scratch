@@ -1,6 +1,7 @@
 import type { RankerService } from "./types";
 import { StubRankerService } from "./stub";
 import { AnthropicRankerService } from "./anthropic";
+import { llmEnabled } from "../anthropic";
 
 export type {
   RankerService,
@@ -10,11 +11,7 @@ export type {
   RankerSnippet,
 } from "./types";
 
-// One place to choose the implementation. Defaults to the stub; set
-// RANKER_IMPL=anthropic once the real service is wired.
+// Use the real service when an Anthropic key is present; otherwise the stub.
 export function getRankerService(): RankerService {
-  if (process.env.RANKER_IMPL === "anthropic") {
-    return new AnthropicRankerService();
-  }
-  return new StubRankerService();
+  return llmEnabled() ? new AnthropicRankerService() : new StubRankerService();
 }

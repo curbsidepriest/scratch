@@ -10,6 +10,7 @@ import {
   commitSnippets,
   createThroughline,
   dismissThroughline,
+  evaluateSpark,
   fetchScratches,
   fetchSpark,
   fetchSuggestion,
@@ -50,9 +51,16 @@ export function Scratchpad() {
     queryFn: fetchSpark,
   });
 
-  const afterChange = () => {
+  // After new material is written, refresh the scratch list and ask the Ranker
+  // to (re)evaluate — the one place the spark evaluation is triggered.
+  const afterChange = async () => {
     queryClient.invalidateQueries({ queryKey: SCRATCHES_KEY });
-    queryClient.invalidateQueries({ queryKey: SPARK_KEY });
+    try {
+      const spark = await evaluateSpark();
+      queryClient.setQueryData(SPARK_KEY, spark);
+    } catch {
+      queryClient.invalidateQueries({ queryKey: SPARK_KEY });
+    }
   };
 
   const dismiss = useMutation({
