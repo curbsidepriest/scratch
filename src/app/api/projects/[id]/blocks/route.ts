@@ -1,13 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 import { getLinterService } from "@/lib/services/linter";
+
+async function ownsProject(userId: string, projectId: string) {
+  return !!(await prisma.project.findFirst({
+    where: { id: projectId, userId },
+    select: { id: true },
+  }));
+}
 
 /** GET /api/projects/:id/blocks — ordered blocks, each annotated with any gap. */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
+  if (!(await ownsProject(userId, id))) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
   const blocks = await prisma.block.findMany({
     where: { projectId: id },
     orderBy: { order: "asc" },
@@ -53,7 +66,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
+  if (!(await ownsProject(userId, id))) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
 
   let body: unknown;
   try {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 import { getRankerService } from "@/lib/services/ranker";
 
 /**
@@ -11,10 +12,12 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
 
-  const throughline = await prisma.throughline.findUnique({
-    where: { id },
+  const throughline = await prisma.throughline.findFirst({
+    where: { id, userId },
     include: { evidence: true },
   });
   if (!throughline) {
@@ -22,7 +25,7 @@ export async function GET(
   }
 
   const snippets = await prisma.snippet.findMany({
-    where: { archived: false }, // don't offer archived snippets in the picker (§3)
+    where: { userId, archived: false }, // this user's active snippets only (§3)
     orderBy: { createdAt: "desc" },
   });
 

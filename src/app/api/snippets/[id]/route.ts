@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 import { wordCount } from "@/lib/domain";
 
 // NOTE: still no DELETE — snippets are never destroyed (§9.2). But they are NOT
@@ -9,8 +10,10 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
-  const existing = await prisma.snippet.findUnique({ where: { id } });
+  const existing = await prisma.snippet.findFirst({ where: { id, userId } });
   if (!existing) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }

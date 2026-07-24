@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -126,6 +127,7 @@ export function Scratchpad() {
           >
             Just write
           </Link>
+          <UserButton />
         </nav>
       </header>
 

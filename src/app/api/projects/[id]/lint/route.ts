@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 import { getLinterService } from "@/lib/services/linter";
 
 // A flag's identity is (reason + normalized quote). This is what lets us honor
@@ -28,8 +29,10 @@ export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
-  const project = await prisma.project.findUnique({ where: { id } });
+  const project = await prisma.project.findFirst({ where: { id, userId } });
   if (!project) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }

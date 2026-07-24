@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 import { wordCount } from "@/lib/domain";
 
 /**
@@ -14,8 +15,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id: projectId } = await params;
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, userId },
+  });
   if (!project) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
@@ -34,6 +39,7 @@ export async function POST(
   const snippet = await prisma.$transaction(async (tx) => {
     const created = await tx.snippet.create({
       data: {
+        userId,
         content,
         sourceMode: "freewrite",
         wordCount: wordCount(content),

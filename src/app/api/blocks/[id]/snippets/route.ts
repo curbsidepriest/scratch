@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 
 // A block holds MANY snippets (shared references, never moved/copied). These
 // endpoints add/remove a snippet within a block; the underlying Snippet is
@@ -10,8 +11,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id: blockId } = await params;
-  const block = await prisma.block.findUnique({ where: { id: blockId } });
+  const block = await prisma.block.findFirst({
+    where: { id: blockId, project: { userId } },
+  });
   if (!block) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   let body: unknown;
@@ -23,6 +28,14 @@ export async function POST(
   const snippetId = (body as { snippetId?: unknown }).snippetId;
   if (typeof snippetId !== "string" || snippetId === "") {
     return NextResponse.json({ error: "snippetId is required" }, { status: 400 });
+  }
+  // Only allow attaching the user's own snippets.
+  const ownsSnippet = await prisma.snippet.findFirst({
+    where: { id: snippetId, userId },
+    select: { id: true },
+  });
+  if (!ownsSnippet) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
   // Idempotent: dragging the same snippet in twice is a no-op.
@@ -47,7 +60,14 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id: blockId } = await params;
+  const block = await prisma.block.findFirst({
+    where: { id: blockId, project: { userId } },
+    select: { id: true },
+  });
+  if (!block) return NextResponse.json({ error: "not found" }, { status: 404 });
   let body: unknown;
   try {
     body = await req.json();

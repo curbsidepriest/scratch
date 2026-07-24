@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 
 /**
  * PATCH /api/blocks/:id — edit a block's label/body, or fill it from a snippet
@@ -9,8 +10,12 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
-  const existing = await prisma.block.findUnique({ where: { id } });
+  const existing = await prisma.block.findFirst({
+    where: { id, project: { userId } },
+  });
   if (!existing) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
@@ -43,7 +48,9 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
-  await prisma.block.deleteMany({ where: { id } });
+  await prisma.block.deleteMany({ where: { id, project: { userId } } });
   return NextResponse.json({ ok: true });
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 import { wordCount } from "@/lib/domain";
 
 /**
@@ -14,9 +15,11 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
-  const scratch = await prisma.scratch.findUnique({
-    where: { id },
+  const scratch = await prisma.scratch.findFirst({
+    where: { id, userId },
     include: { snippets: true },
   });
   if (!scratch) {
@@ -55,6 +58,7 @@ export async function POST(
     }),
     prisma.snippet.createMany({
       data: items.map((s, i) => ({
+        userId,
         content: s.content as string,
         label: typeof s.label === "string" ? s.label : null,
         order: i,

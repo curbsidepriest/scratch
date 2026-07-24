@@ -7,9 +7,9 @@ const NEW_SNIPPETS_BEFORE_NEXT_SPARK = 3;
 
 type ActiveSpark = Awaited<ReturnType<typeof findActiveSpark>>;
 
-export function findActiveSpark() {
+export function findActiveSpark(userId: string) {
   return prisma.throughline.findFirst({
-    where: { status: "surfaced" },
+    where: { userId, status: "surfaced" },
     orderBy: { createdAt: "desc" },
     include: { evidence: { include: { snippet: true } } },
   });
@@ -35,17 +35,17 @@ export function serializeSpark(t: NonNullable<ActiveSpark>) {
  * is already surfaced (no re-evaluation). Honors the quiet period after a
  * dismiss/promote and won't re-surface a set-aside phrase.
  */
-export async function evaluateSpark() {
-  const active = await findActiveSpark();
+export async function evaluateSpark(userId: string) {
+  const active = await findActiveSpark(userId);
   if (active) return serializeSpark(active);
 
   const snippets = await prisma.snippet.findMany({
-    where: { archived: false },
+    where: { userId, archived: false },
     orderBy: { createdAt: "asc" },
   });
 
   const lastDecision = await prisma.throughline.findFirst({
-    where: { status: { in: ["dismissed", "promoted"] } },
+    where: { userId, status: { in: ["dismissed", "promoted"] } },
     orderBy: { createdAt: "desc" },
   });
   if (lastDecision) {
@@ -64,12 +64,13 @@ export async function evaluateSpark() {
   if (!candidate) return null;
 
   const dismissedSame = await prisma.throughline.findFirst({
-    where: { phrase: candidate.phrase, status: "dismissed" },
+    where: { userId, phrase: candidate.phrase, status: "dismissed" },
   });
   if (dismissedSame) return null;
 
   const created = await prisma.throughline.create({
     data: {
+      userId,
       phrase: candidate.phrase,
       origin: "ranker",
       status: "surfaced",

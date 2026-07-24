@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { currentUserId, unauthorized } from "@/lib/auth";
 import { evaluateSpark } from "@/lib/spark";
 
 /**
@@ -7,6 +8,8 @@ import { evaluateSpark } from "@/lib/spark";
  * (potentially real-model) evaluation happens on writing, not on idle loads.
  */
 export async function POST() {
-  const spark = await evaluateSpark();
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
+  const spark = await evaluateSpark(userId);
   return NextResponse.json(spark);
 }

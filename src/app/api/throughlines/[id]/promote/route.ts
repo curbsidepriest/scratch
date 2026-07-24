@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 
 /**
  * POST /api/throughlines/:id/promote — the key moment (spec §6). Creates a
@@ -13,10 +14,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
 
-  const throughline = await prisma.throughline.findUnique({
-    where: { id },
+  const throughline = await prisma.throughline.findFirst({
+    where: { id, userId },
     include: { evidence: true },
   });
   if (!throughline) {
@@ -45,15 +48,15 @@ export async function POST(
     ? rawIds.filter((x): x is string => typeof x === "string")
     : [];
 
-  // Only reference snippets that actually exist.
+  // Only reference the user's own snippets that actually exist.
   const valid = await prisma.snippet.findMany({
-    where: { id: { in: requested } },
+    where: { id: { in: requested }, userId },
     select: { id: true },
   });
 
   const project = await prisma.$transaction(async (tx) => {
     const created = await tx.project.create({
-      data: { throughlineId: id },
+      data: { userId, throughlineId: id },
     });
     if (valid.length > 0) {
       await tx.projectSnippet.createMany({

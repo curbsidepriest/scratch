@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 
 const STATUSES = ["open", "acknowledged", "resolved"];
 
@@ -12,8 +13,12 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
-  const existing = await prisma.lintFlag.findUnique({ where: { id } });
+  const existing = await prisma.lintFlag.findFirst({
+    where: { id, project: { userId } },
+  });
   if (!existing) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }

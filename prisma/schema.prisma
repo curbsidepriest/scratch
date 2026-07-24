@@ -19,6 +19,7 @@ datasource db {
 /// from. The user segments it (human-in-the-loop) into paragraph snippets.
 model Scratch {
   id         String   @id @default(cuid())
+  userId     String   @map("user_id") // owning Clerk user
   content    String // the raw text, verbatim
   label      String? // short descriptive (non-poetic) handle for the whole scratch
   sourceMode String   @map("source_mode") // "dump" | "freewrite" | "quick_capture"
@@ -27,7 +28,7 @@ model Scratch {
 
   snippets Snippet[]
 
-  @@index([createdAt])
+  @@index([userId, createdAt])
   @@map("scratches")
 }
 
@@ -36,6 +37,7 @@ model Scratch {
 /// descriptive `label` to skim by. Never hard-deleted; shared by reference.
 model Snippet {
   id         String   @id @default(cuid())
+  userId     String   @map("user_id") // owning Clerk user (denormalized for scoped queries)
   content    String
   label      String? // few descriptive words on what's in the paragraph
   order      Int      @default(0) @map("sort_order") // position within its scratch
@@ -51,7 +53,7 @@ model Snippet {
   projectSnippets ProjectSnippet[]
   blockSnippets   BlockSnippet[] // blocks this snippet fills (shared, many-to-many)
 
-  @@index([createdAt])
+  @@index([userId, archived])
   @@index([scratchId])
   @@map("snippets")
 }
@@ -60,6 +62,7 @@ model Snippet {
 /// `phrase` names TERRITORY, never a title/thesis (spec §5).
 model Throughline {
   id        String   @id @default(cuid())
+  userId    String   @map("user_id") // owning Clerk user
   phrase    String
   origin    String // "ranker" | "user"
   status    String   @default("surfaced") // "surfaced" | "dismissed" | "promoted"
@@ -69,6 +72,7 @@ model Throughline {
   evidence Evidence[]
   project  Project? // a throughline promotes to at most one project in v1
 
+  @@index([userId, status])
   @@map("throughlines")
 }
 
@@ -90,6 +94,7 @@ model Evidence {
 /// A piece being developed. A lens onto the shared snippet substrate.
 model Project {
   id            String   @id @default(cuid())
+  userId        String   @map("user_id") // owning Clerk user
   throughlineId String   @unique @map("throughline_id")
   title         String? // user-set, optional, deferred
   draft         String   @default("") // Editor working text (spec §8c)
@@ -101,6 +106,7 @@ model Project {
   blocks          Block[]
   lintFlags       LintFlag[]
 
+  @@index([userId, updatedAt])
   @@map("projects")
 }
 

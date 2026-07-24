@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 import { isSourceMode, wordCount, type SourceMode } from "@/lib/domain";
 import { getSegmenterService } from "@/lib/services/segmenter";
 
-/** GET /api/scratches — every scratch, newest first, with its snippets nested. */
+/** GET /api/scratches — the user's scratches, newest first, snippets nested. */
 export async function GET() {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const scratches = await prisma.scratch.findMany({
+    where: { userId },
     orderBy: { createdAt: "desc" },
     include: { snippets: { orderBy: { order: "asc" } } },
   });
@@ -36,6 +40,8 @@ export async function GET() {
  * paragraph split (not yet persisted as snippets — the user reviews it first).
  */
 export async function POST(req: NextRequest) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   let body: unknown;
   try {
     body = await req.json();
@@ -52,7 +58,7 @@ export async function POST(req: NextRequest) {
   const mode: SourceMode = isSourceMode(sourceMode) ? sourceMode : "freewrite";
 
   const scratch = await prisma.scratch.create({
-    data: { content, sourceMode: mode, wordCount: wordCount(content) },
+    data: { userId, content, sourceMode: mode, wordCount: wordCount(content) },
   });
 
   const suggestion = await getSegmenterService().segment(content);

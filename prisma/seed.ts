@@ -5,6 +5,10 @@ import { PrismaPg } from "@prisma/adapter-pg";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+// Data is now per-user. Seed into a specific Clerk user id (find yours in the
+// Clerk dashboard or via the UserButton account page): SEED_USER_ID=user_... npm run db:seed
+const SEED_USER_ID = process.env.SEED_USER_ID;
+
 const wc = (t: string) => (t.trim() === "" ? 0 : t.trim().split(/\s+/).length);
 
 // Realistic seed: writing sessions (Scratches) with paragraph-sized snippets.
@@ -103,9 +107,15 @@ const UNSPLIT_CONTENT =
   "Who am I even writing for. When I picture a reader it's usually one specific person, and the sentences get sharper the second I do that, which probably means the vague 'audience' in my head is useless and I should just write the letter to the one person every time.\n\nBut then the fear creeps in that writing for one person is too small, that it won't travel, and I'm back to performing for a crowd that doesn't exist yet. The crowd makes everything worse. The one person makes everything better. I don't know why I keep forgetting that.";
 
 async function main() {
-  const existing = await prisma.scratch.count();
+  if (!SEED_USER_ID) {
+    console.log(
+      "Set SEED_USER_ID=user_... to seed into a specific Clerk user. Skipping.",
+    );
+    return;
+  }
+  const existing = await prisma.scratch.count({ where: { userId: SEED_USER_ID } });
   if (existing > 0) {
-    console.log(`Scratches already present (${existing}); skipping seed.`);
+    console.log(`Scratches already present for user (${existing}); skipping seed.`);
     return;
   }
 
@@ -116,6 +126,7 @@ async function main() {
         : UNSPLIT_CONTENT;
     const scratch = await prisma.scratch.create({
       data: {
+        userId: SEED_USER_ID,
         content,
         label: sc.snippets.length > 0 ? sc.label : null,
         sourceMode: sc.sourceMode,
@@ -125,6 +136,7 @@ async function main() {
     if (sc.snippets.length > 0) {
       await prisma.snippet.createMany({
         data: sc.snippets.map((s, i) => ({
+          userId: SEED_USER_ID,
           content: s.content,
           label: s.label,
           order: i,

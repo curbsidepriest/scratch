@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 
 /**
  * PATCH /api/throughlines/:id — let the user override the through-line with
@@ -9,8 +10,10 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
-  const existing = await prisma.throughline.findUnique({ where: { id } });
+  const existing = await prisma.throughline.findFirst({ where: { id, userId } });
   if (!existing) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }

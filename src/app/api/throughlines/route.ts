@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 
 /**
  * POST /api/throughlines { phrase } — start your OWN through-line, no spark
@@ -8,6 +9,8 @@ import { prisma } from "@/lib/db";
  * it's promoted into a project.
  */
 export async function POST(req: Request) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   let body: unknown;
   try {
     body = await req.json();
@@ -20,7 +23,7 @@ export async function POST(req: Request) {
   }
 
   const throughline = await prisma.throughline.create({
-    data: { phrase: phrase.trim(), origin: "user", status: "draft" },
+    data: { userId, phrase: phrase.trim(), origin: "user", status: "draft" },
   });
   return NextResponse.json({ id: throughline.id }, { status: 201 });
 }

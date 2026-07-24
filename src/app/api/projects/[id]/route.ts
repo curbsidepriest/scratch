@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 
 /** PATCH /api/projects/:id — save the Editor draft (or set a title). */
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
-  const existing = await prisma.project.findUnique({ where: { id } });
+  const existing = await prisma.project.findFirst({ where: { id, userId } });
   if (!existing) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
@@ -32,10 +35,12 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const { id } = await params;
 
-  const project = await prisma.project.findUnique({
-    where: { id },
+  const project = await prisma.project.findFirst({
+    where: { id, userId },
     include: {
       throughline: true,
       projectSnippets: {

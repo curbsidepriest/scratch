@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { currentUserId, unauthorized } from "@/lib/auth";
 import { wordCount } from "@/lib/domain";
 
-/** GET /api/projects — the collection of pieces, most recently worked first. */
+/** GET /api/projects — the user's pieces, most recently worked first. */
 export async function GET() {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
   const projects = await prisma.project.findMany({
+    where: { userId },
     orderBy: { updatedAt: "desc" },
     include: {
       throughline: true,
