@@ -7,22 +7,22 @@ import { Wordmark } from "./Wordmark";
 // The public front door. Signed-out visitors land here; signing in swaps them
 // into the Scratchpad. Restraint is still the aesthetic (spec §4) — crafted and
 // quietly animated, not loud. The three pillars mirror the real app flow:
-// Dump (get it out) → Spark (find what matters) → Architect (shape a piece).
+// timed sessions (get it out) → curation (find what matters) → architect a piece.
 const PILLARS = [
   {
     step: "01",
-    name: "Dump",
-    body: "A timed, no-backspace canvas. Get everything out of your head before you let yourself judge a word of it.",
+    name: "Timed sessions",
+    body: "Short, timed writing sprints with no backspace. The clock does one job — keep your hand moving so the raw material actually gets out.",
   },
   {
     step: "02",
-    name: "Spark",
-    body: "The model reads what you wrote back and surfaces the one line worth chasing. It never writes for you.",
+    name: "Intelligent curation",
+    body: "The model reads everything back and surfaces what's alive in it. The ideas worth acting on rise on their own, so the next move is obvious.",
   },
   {
     step: "03",
-    name: "Architect",
-    body: "Promote a spark into a piece, then shape your raw snippets into something that finally has a shape.",
+    name: "Architect & edit",
+    body: "Crafting and curating are different jobs, so Scratch keeps them apart. Promote what matters into a piece, then shape and edit it on its own.",
   },
 ];
 
@@ -67,8 +67,6 @@ export function Landing() {
           className="max-w-3xl text-balance text-5xl font-semibold leading-[1.02] tracking-tight text-foreground sm:text-7xl"
         >
           Write to think.
-          <br />
-          <span className="text-muted">Never think for you.</span>
         </motion.h1>
 
         <motion.p
@@ -77,9 +75,9 @@ export function Landing() {
           transition={{ duration: 0.7, ease, delay: 0.12 }}
           className="mt-6 max-w-xl text-balance text-lg leading-relaxed text-muted"
         >
-          Scratch is a calm place to dump raw thought, find the one idea worth
-          chasing, and shape it into a piece. The model reads you back. It never
-          writes for you.
+          Scratch is a calm place to get raw thought out, find the ideas worth
+          chasing, and shape them into finished pieces — with the model reading
+          you back, never writing for you.
         </motion.p>
 
         <motion.div
