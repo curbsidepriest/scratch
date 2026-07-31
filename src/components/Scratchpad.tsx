@@ -23,6 +23,7 @@ import { ScratchList } from "./ScratchList";
 import { Spark } from "./Spark";
 import { PromotionOverlay } from "./PromotionOverlay";
 import { SegmentationReview } from "./SegmentationReview";
+import { Onboarding } from "./Onboarding";
 
 const SCRATCHES_KEY = ["scratches"];
 const SPARK_KEY = ["spark"];
@@ -103,6 +104,7 @@ export function Scratchpad() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-10">
+      <Onboarding />
       <header className="mb-8 flex items-center justify-between gap-4">
         <Wordmark />
         <nav className="flex items-center gap-3">
