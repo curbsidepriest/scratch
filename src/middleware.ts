@@ -1,6 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isPublic = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
+// "/" is public: signed-out visitors see the Landing page, signed-in users get
+// the Scratchpad (the page itself branches on auth).
+const isPublic = createRouteMatcher(["/", "/sign-in(.*)", "/sign-up(.*)"]);
 const isApi = createRouteMatcher(["/api(.*)"]);
 
 // Pages redirect to sign-in when logged out. API routes self-guard with
