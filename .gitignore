@@ -55,3 +55,6 @@ skills-lock.json
 # playwright screenshots (local verification artifacts)
 /screenshots/
 /test-results/
+
+# clerk configuration (can include secrets)
+/.clerk/
