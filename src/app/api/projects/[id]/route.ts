@@ -30,6 +30,35 @@ export async function PATCH(
   return NextResponse.json({ ok: true });
 }
 
+/**
+ * DELETE /api/projects/:id — delete a piece. Its blocks, snippet references and
+ * lint flags cascade away; the underlying snippets are shared and kept. The
+ * through-line is un-promoted (back to "surfaced") so the idea returns to play.
+ */
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
+  const { id } = await params;
+
+  const project = await prisma.project.findFirst({ where: { id, userId } });
+  if (!project) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
+
+  await prisma.$transaction([
+    prisma.project.delete({ where: { id } }),
+    prisma.throughline.update({
+      where: { id: project.throughlineId },
+      data: { status: "surfaced" },
+    }),
+  ]);
+
+  return NextResponse.json({ ok: true });
+}
+
 /** GET /api/projects/:id — the project with its through-line and snippets. */
 export async function GET(
   _req: Request,

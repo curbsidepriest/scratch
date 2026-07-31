@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { fetchProjects } from "@/lib/api";
+import { deleteProject, fetchProjects } from "@/lib/api";
 import { relativeTime } from "@/lib/time";
+import { DeleteControl } from "./DeleteControl";
 
 /**
  * The collection of pieces — the payoff surface. This is ultimately what the
@@ -12,9 +13,14 @@ import { relativeTime } from "@/lib/time";
  * glad to look at. Each piece resumes where you left it.
  */
 export function PiecesCollection() {
+  const queryClient = useQueryClient();
   const { data: pieces = [], isLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: fetchProjects,
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteProject(id),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
   });
 
   return (
@@ -53,12 +59,13 @@ export function PiecesCollection() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(i * 0.04, 0.3), duration: 0.35 }}
+              className="group relative"
             >
               <Link
                 href={`/project/${p.id}`}
                 className="flex h-full flex-col justify-between rounded-xl border border-border bg-surface p-5 transition-colors hover:border-accent/50"
               >
-                <p className="text-[17px] leading-snug text-foreground">
+                <p className="pr-14 text-[17px] leading-snug text-foreground">
                   {p.title || p.phrase}
                 </p>
                 <div className="mt-6 flex items-center gap-2 text-xs text-faint">
@@ -71,6 +78,11 @@ export function PiecesCollection() {
                   <span>edited {relativeTime(p.updatedAt)}</span>
                 </div>
               </Link>
+              <DeleteControl
+                onDelete={() => remove.mutateAsync(p.id)}
+                idle="delete"
+                className="absolute right-4 top-4 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+              />
             </motion.div>
           ))}
         </div>

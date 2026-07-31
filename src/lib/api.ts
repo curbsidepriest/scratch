@@ -37,6 +37,11 @@ export async function createScratch(
   return res.json();
 }
 
+export async function deleteScratch(id: string): Promise<void> {
+  const res = await fetch(`/api/scratches/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete scrap");
+}
+
 export async function fetchSuggestion(
   scratchId: string,
 ): Promise<SegmentSuggestion> {
@@ -149,6 +154,11 @@ export async function fetchProjects(): Promise<ProjectSummaryDTO[]> {
   const res = await fetch("/api/projects");
   if (!res.ok) throw new Error("Failed to load pieces");
   return res.json();
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete piece");
 }
 
 export async function fetchProject(id: string): Promise<ProjectDTO> {

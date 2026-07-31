@@ -4,8 +4,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { ScratchDTO, SnippetDTO } from "@/lib/types";
 import { relativeTime } from "@/lib/time";
-import { setSnippetArchived, updateSnippet } from "@/lib/api";
+import { deleteScratch, setSnippetArchived, updateSnippet } from "@/lib/api";
 import { EditableSnippet } from "./EditableSnippet";
+import { DeleteControl } from "./DeleteControl";
 
 const MODE_LABELS: Record<string, string> = {
   dump: "dump",
@@ -39,6 +40,10 @@ function ScratchCard({
       setSnippetArchived(a.id, a.archived),
     onSettled: invalidate,
   });
+  const remove = useMutation({
+    mutationFn: () => deleteScratch(scratch.id),
+    onSettled: invalidate,
+  });
 
   const title =
     scratch.label ||
@@ -49,21 +54,28 @@ function ScratchCard({
   const count = scratch.snippets.length;
 
   return (
-    <article className="rounded-lg border border-border bg-surface">
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center gap-2 px-5 py-3 text-left"
-      >
-        <span className="text-faint">{expanded ? "▾" : "▸"}</span>
-        <span className="min-w-0 flex-1 truncate text-[15px] text-foreground">
-          {title}
-        </span>
-        <span className="shrink-0 text-xs text-faint">
-          {relativeTime(scratch.createdAt)} · {MODE_LABELS[scratch.sourceMode] ?? scratch.sourceMode}
-          {" · "}
-          {count > 0 ? `${count} snippet${count === 1 ? "" : "s"}` : "not split"}
-        </span>
-      </button>
+    <article className="group rounded-lg border border-border bg-surface">
+      <div className="flex w-full items-center gap-3 px-5 py-3">
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          <span className="text-faint">{expanded ? "▾" : "▸"}</span>
+          <span className="min-w-0 flex-1 truncate text-[15px] text-foreground">
+            {title}
+          </span>
+          <span className="shrink-0 text-xs text-faint">
+            {relativeTime(scratch.createdAt)} · {MODE_LABELS[scratch.sourceMode] ?? scratch.sourceMode}
+            {" · "}
+            {count > 0 ? `${count} snippet${count === 1 ? "" : "s"}` : "not split"}
+          </span>
+        </button>
+        <DeleteControl
+          onDelete={() => remove.mutateAsync()}
+          idle="delete"
+          className="shrink-0 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+        />
+      </div>
 
       {expanded && (
         <div className="border-t border-border px-5 py-4">
