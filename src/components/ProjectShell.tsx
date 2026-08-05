@@ -54,6 +54,20 @@ export function ProjectShell({ id }: { id: string }) {
   const invalidateBlocks = () =>
     queryClient.invalidateQueries({ queryKey: ["blocks", id] });
 
+  // Shared optimistic helpers for the blocks cache — every manipulation applies
+  // instantly, then the (now fast, LLM-free) refetch reconciles.
+  const beginOptimistic = async () => {
+    await queryClient.cancelQueries({ queryKey: ["blocks", id] });
+    return { prev: queryClient.getQueryData<BlockDTO[]>(["blocks", id]) };
+  };
+  const writeBlocks = (fn: (prev: BlockDTO[]) => BlockDTO[]) =>
+    queryClient.setQueryData<BlockDTO[]>(["blocks", id], (old) =>
+      old ? fn(old) : old,
+    );
+  const rollbackBlocks = (ctx?: { prev?: BlockDTO[] }) => {
+    if (ctx?.prev) queryClient.setQueryData(["blocks", id], ctx.prev);
+  };
+
   // Fill a block with a snippet — optimistic so it appears the instant you drop,
   // not after a server round-trip + refetch.
   const fill = useMutation({
@@ -87,15 +101,47 @@ export function ProjectShell({ id }: { id: string }) {
     },
     onSettled: invalidateBlocks,
   });
+  // Reorder blocks — apply the new order to the cache immediately, else the
+  // dragged block snaps back to its old slot until the refetch lands.
   const reorder = useMutation({
     mutationFn: (orderedIds: string[]) => reorderBlocks(id, orderedIds),
+    onMutate: async (orderedIds) => {
+      const ctx = await beginOptimistic();
+      writeBlocks((prev) => {
+        const byId = new Map(prev.map((b) => [b.id, b]));
+        return orderedIds
+          .map((bid) => byId.get(bid))
+          .filter((b): b is BlockDTO => !!b);
+      });
+      return ctx;
+    },
+    onError: (_e, _v, ctx) => rollbackBlocks(ctx),
     onSettled: invalidateBlocks,
   });
   const reorderSnippets = useMutation({
     mutationFn: (a: { blockId: string; orderedIds: string[] }) =>
       reorderBlockSnippets(a.blockId, a.orderedIds),
+    onMutate: async ({ blockId, orderedIds }) => {
+      const ctx = await beginOptimistic();
+      writeBlocks((prev) =>
+        prev.map((b) => {
+          if (b.id !== blockId) return b;
+          const byId = new Map(b.snippets.map((s) => [s.id, s]));
+          return {
+            ...b,
+            snippets: orderedIds
+              .map((sid) => byId.get(sid))
+              .filter((s): s is (typeof b.snippets)[number] => !!s),
+          };
+        }),
+      );
+      return ctx;
+    },
+    onError: (_e, _v, ctx) => rollbackBlocks(ctx),
     onSettled: invalidateBlocks,
   });
+  // Move a snippet between blocks — optimistic so it lands instantly instead of
+  // after a remove + add round-trip.
   const moveSnippet = useMutation({
     mutationFn: async (a: {
       fromBlockId: string;
@@ -105,6 +151,23 @@ export function ProjectShell({ id }: { id: string }) {
       await removeBlockSnippet(a.fromBlockId, a.snippetId);
       await addBlockSnippet(a.toBlockId, a.snippetId);
     },
+    onMutate: async ({ fromBlockId, toBlockId, snippetId }) => {
+      const ctx = await beginOptimistic();
+      const snip = ctx.prev
+        ?.find((b) => b.id === fromBlockId)
+        ?.snippets.find((s) => s.id === snippetId);
+      writeBlocks((prev) =>
+        prev.map((b) => {
+          if (b.id === fromBlockId)
+            return { ...b, snippets: b.snippets.filter((s) => s.id !== snippetId) };
+          if (b.id === toBlockId && snip && !b.snippets.some((s) => s.id === snippetId))
+            return { ...b, snippets: [...b.snippets, snip] };
+          return b;
+        }),
+      );
+      return ctx;
+    },
+    onError: (_e, _v, ctx) => rollbackBlocks(ctx),
     onSettled: invalidateBlocks,
   });
 

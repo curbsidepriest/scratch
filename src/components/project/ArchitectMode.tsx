@@ -34,6 +34,29 @@ export function ArchitectMode({
   const [newLabel, setNewLabel] = useState("");
   const add = useMutation({
     mutationFn: (label: string) => createBlock(projectId, label),
+    // Optimistic: show the new block immediately with a temp id; the refetch
+    // reconciles it with the real one.
+    onMutate: async (label) => {
+      await queryClient.cancelQueries({ queryKey: ["blocks", projectId] });
+      const prev = queryClient.getQueryData<BlockDTO[]>(["blocks", projectId]);
+      const temp: BlockDTO = {
+        id: `temp-${crypto.randomUUID()}`,
+        label,
+        body: null,
+        order: prev?.length ?? 0,
+        parentBlockId: null,
+        kind: "placeholder",
+        snippets: [],
+        gap: null,
+      };
+      queryClient.setQueryData<BlockDTO[]>(["blocks", projectId], (old) =>
+        old ? [...old, temp] : [temp],
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(["blocks", projectId], ctx.prev);
+    },
     onSettled: invalidate,
   });
 
@@ -106,6 +129,7 @@ function BlockCard({
   projectId: string;
   onChange: () => void;
 }) {
+  const queryClient = useQueryClient();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } =
     useSortable({ id: block.id, data: { type: "block" } });
   const [editingLabel, setEditingLabel] = useState(false);
@@ -113,12 +137,40 @@ function BlockCard({
   const [writing, setWriting] = useState(false);
   const [draft, setDraft] = useState("");
 
+  // Optimistic helpers for the blocks cache — every edit shows instantly.
+  const beginOptimistic = async () => {
+    await queryClient.cancelQueries({ queryKey: ["blocks", projectId] });
+    return { prev: queryClient.getQueryData<BlockDTO[]>(["blocks", projectId]) };
+  };
+  const writeBlocks = (fn: (prev: BlockDTO[]) => BlockDTO[]) =>
+    queryClient.setQueryData<BlockDTO[]>(["blocks", projectId], (old) =>
+      old ? fn(old) : old,
+    );
+  const rollback = (ctx?: { prev?: BlockDTO[] }) => {
+    if (ctx?.prev) queryClient.setQueryData(["blocks", projectId], ctx.prev);
+  };
+
   const patch = useMutation({
     mutationFn: (p: { label?: string }) => updateBlock(block.id, p),
+    onMutate: async (p) => {
+      const ctx = await beginOptimistic();
+      if (typeof p.label === "string")
+        writeBlocks((prev) =>
+          prev.map((b) => (b.id === block.id ? { ...b, label: p.label! } : b)),
+        );
+      return ctx;
+    },
+    onError: (_e, _v, ctx) => rollback(ctx),
     onSettled: onChange,
   });
   const remove = useMutation({
     mutationFn: () => deleteBlock(block.id),
+    onMutate: async () => {
+      const ctx = await beginOptimistic();
+      writeBlocks((prev) => prev.filter((b) => b.id !== block.id));
+      return ctx;
+    },
+    onError: (_e, _v, ctx) => rollback(ctx),
     onSettled: onChange,
   });
   const editSnippet = useMutation({
@@ -128,11 +180,36 @@ function BlockCard({
   });
   const unfill = useMutation({
     mutationFn: (snippetId: string) => removeBlockSnippet(block.id, snippetId),
+    onMutate: async (snippetId) => {
+      const ctx = await beginOptimistic();
+      writeBlocks((prev) =>
+        prev.map((b) =>
+          b.id === block.id
+            ? { ...b, snippets: b.snippets.filter((s) => s.id !== snippetId) }
+            : b,
+        ),
+      );
+      return ctx;
+    },
+    onError: (_e, _v, ctx) => rollback(ctx),
     onSettled: onChange,
   });
   const write = useMutation({
     mutationFn: (content: string) =>
       writeProjectSnippet(projectId, content, block.id),
+    onMutate: async (content) => {
+      const ctx = await beginOptimistic();
+      const tempId = `temp-${crypto.randomUUID()}`;
+      writeBlocks((prev) =>
+        prev.map((b) =>
+          b.id === block.id
+            ? { ...b, snippets: [...b.snippets, { id: tempId, content, label: null }] }
+            : b,
+        ),
+      );
+      return ctx;
+    },
+    onError: (_e, _v, ctx) => rollback(ctx),
     onSettled: onChange,
   });
 
