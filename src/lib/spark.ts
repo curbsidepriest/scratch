@@ -31,26 +31,39 @@ export function serializeSpark(t: NonNullable<ActiveSpark>) {
 
 /**
  * Run the Ranker over the active (non-archived) snippets and, if it surfaces a
- * through-line, persist + return it. Returns the existing active spark if one
- * is already surfaced (no re-evaluation). Honors the quiet period after a
- * dismiss/promote and won't re-surface a set-aside phrase.
+ * through-line, persist + return it.
+ *
+ * Automatic (opts.force falsy): returns the existing active spark without
+ * re-evaluating, and honors the quiet period after a dismiss/promote —
+ * scarcity gives the spark its weight (spec §5).
+ *
+ * Manual (opts.force = true, the user explicitly asked): always re-evaluates
+ * and skips the quiet period. It never erases the current spark on a miss — if
+ * nothing new surfaces, the existing one (if any) is kept. A genuinely new
+ * theme replaces the shown one; the same theme is left as-is. A phrase the user
+ * already dismissed is still not re-surfaced.
  */
-export async function evaluateSpark(userId: string) {
+export async function evaluateSpark(
+  userId: string,
+  opts: { force?: boolean } = {},
+) {
   const active = await findActiveSpark(userId);
-  if (active) return serializeSpark(active);
+  if (active && !opts.force) return serializeSpark(active);
 
   const snippets = await prisma.snippet.findMany({
     where: { userId, archived: false },
     orderBy: { createdAt: "asc" },
   });
 
-  const lastDecision = await prisma.throughline.findFirst({
-    where: { userId, status: { in: ["dismissed", "promoted"] } },
-    orderBy: { createdAt: "desc" },
-  });
-  if (lastDecision) {
-    const since = snippets.filter((s) => s.createdAt > lastDecision.createdAt).length;
-    if (since < NEW_SNIPPETS_BEFORE_NEXT_SPARK) return null;
+  if (!opts.force) {
+    const lastDecision = await prisma.throughline.findFirst({
+      where: { userId, status: { in: ["dismissed", "promoted"] } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (lastDecision) {
+      const since = snippets.filter((s) => s.createdAt > lastDecision.createdAt).length;
+      if (since < NEW_SNIPPETS_BEFORE_NEXT_SPARK) return null;
+    }
   }
 
   const candidate = await getRankerService().evaluate(
@@ -61,12 +74,20 @@ export async function evaluateSpark(userId: string) {
       sourceMode: s.sourceMode,
     })),
   );
-  if (!candidate) return null;
+  // A forced run that finds nothing must not wipe an existing spark.
+  if (!candidate) return active ? serializeSpark(active) : null;
 
   const dismissedSame = await prisma.throughline.findFirst({
     where: { userId, phrase: candidate.phrase, status: "dismissed" },
   });
-  if (dismissedSame) return null;
+  if (dismissedSame) return active ? serializeSpark(active) : null;
+
+  // Forced re-run with a spark already showing: keep it if the theme is the
+  // same, otherwise replace it with the fresh one (evidence cascades on delete).
+  if (active) {
+    if (active.phrase === candidate.phrase) return serializeSpark(active);
+    await prisma.throughline.delete({ where: { id: active.id } });
+  }
 
   const created = await prisma.throughline.create({
     data: {

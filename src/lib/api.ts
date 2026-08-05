@@ -103,9 +103,17 @@ export async function fetchSpark(): Promise<SparkDTO | null> {
   return res.json();
 }
 
-/** Ask the Ranker to (re)evaluate — call after new material is written. */
-export async function evaluateSpark(): Promise<SparkDTO | null> {
-  const res = await fetch("/api/spark/evaluate", { method: "POST" });
+/**
+ * Ask the Ranker to (re)evaluate. Called automatically after new material is
+ * written; pass force=true for a manual, on-demand run (skips the quiet period
+ * and re-evaluates even if a spark is already showing).
+ */
+export async function evaluateSpark(force = false): Promise<SparkDTO | null> {
+  const res = await fetch("/api/spark/evaluate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ force }),
+  });
   if (!res.ok) throw new Error("Failed to evaluate spark");
   return res.json();
 }

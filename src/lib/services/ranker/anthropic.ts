@@ -77,11 +77,16 @@ export class AnthropicRankerService implements RankerService {
     const { candidate } = await structured<{ candidate: RankerCandidate | null }>({
       system: SYSTEM_PROMPT,
       user:
-        "Here are the writer's snippets. Return {\"candidate\": null} most of the " +
-        "time — only surface a through-line when a genuinely alive thread is " +
-        "forming. When you do, `phrase` names the territory (never a title) and " +
-        "each evidence item quotes a real snippet id below with a plain " +
-        "observation.\n\n" +
+        "Here are the writer's snippets, each tagged with its [id]. Look for ONE " +
+        "real theme forming across them.\n\n" +
+        "Return JSON. If nothing genuine stands out, return {\"candidate\": null}. " +
+        "When a real thread is forming, return {\"candidate\": {\"phrase\": ..., " +
+        "\"evidence\": [{\"snippetId\": ..., \"observation\": ...}, ...]}}:\n" +
+        "- phrase: name the theme plainly and concretely, as in your instructions " +
+        "(the two things it circles) — never a title.\n" +
+        "- evidence: 2 to 4 items, each citing a real [id] below with a short, " +
+        "grounded reason it belongs. Do not invent recurrence or contrast that " +
+        "isn't actually in these snippets.\n\n" +
         renderSnippets(snippets),
       schema: CANDIDATE_SCHEMA as unknown as Record<string, unknown>,
       maxTokens: 4000,

@@ -74,6 +74,19 @@ export function Scratchpad() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: SPARK_KEY }),
   });
 
+  // Manual, on-demand spark: ask the Ranker to look right now (force = skip the
+  // quiet period and re-evaluate even if one is showing).
+  const [sparkNote, setSparkNote] = useState<string | null>(null);
+  const findSpark = useMutation({
+    mutationFn: () => evaluateSpark(true),
+    onMutate: () => setSparkNote(null),
+    onSuccess: (s) => {
+      queryClient.setQueryData(SPARK_KEY, s);
+      if (!s) setSparkNote("Nothing's forming yet — keep writing.");
+    },
+    onError: () => setSparkNote("Couldn't look right now. Try again."),
+  });
+
   // Capture → a scratch. Short one-paragraph captures segment silently; longer
   // sessions open the review so the writer curates the split (spec §3).
   const capture = useMutation({
@@ -170,9 +183,9 @@ export function Scratchpad() {
         </div>
       )}
 
-      <AnimatePresence>
-        {spark && (
-          <div className="mb-10">
+      <div className="mb-10">
+        <AnimatePresence>
+          {spark && (
             <Spark
               spark={spark}
               onDevelop={() =>
@@ -181,9 +194,27 @@ export function Scratchpad() {
               onDismiss={() => dismiss.mutate(spark.id)}
               dismissing={dismiss.isPending}
             />
-          </div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+
+        {/* Manual trigger — ask the Ranker to look on demand. */}
+        <div className="mt-3 flex items-center gap-3 text-xs text-faint">
+          <button
+            onClick={() => findSpark.mutate()}
+            disabled={findSpark.isPending}
+            className="transition-colors hover:text-foreground disabled:opacity-50"
+          >
+            {findSpark.isPending
+              ? "Looking for a thread…"
+              : spark
+                ? "Look again"
+                : "Look for a spark"}
+          </button>
+          {sparkNote && !findSpark.isPending && (
+            <span className="text-muted">{sparkNote}</span>
+          )}
+        </div>
+      </div>
 
       <AnimatePresence>
         {promoting && (
