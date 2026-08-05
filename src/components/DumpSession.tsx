@@ -94,6 +94,7 @@ export function DumpSession({ quickStart = false }: { quickStart?: boolean }) {
         setReview({ scratchId: id, suggestion });
         setPhase("review");
       }}
+      onQuit={() => router.push("/")}
     />
   );
 }
@@ -308,15 +309,18 @@ function Running({
   wordTarget,
   noBackspace,
   onDone,
+  onQuit,
 }: {
   goal: Goal;
   minutes: number;
   wordTarget: number;
   noBackspace: boolean;
   onDone: (text: string) => void;
+  onQuit: () => void;
 }) {
   const [text, setText] = useState("");
   const [elapsed, setElapsed] = useState(0);
+  const [confirmingQuit, setConfirmingQuit] = useState(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const startedAt = useRef<number>(Date.now());
   const finished = useRef(false);
@@ -342,6 +346,28 @@ function Running({
     textRef.current?.focus();
   }, []);
 
+  // Guard against losing an in-progress session to a tab close / reload.
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (!finished.current && textValue.current.trim() !== "") {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
+
+  // Quit the session, discarding what's been written. Warn only when there's
+  // something to lose (like abandoning a workout mid-set).
+  function quit() {
+    if (textValue.current.trim() === "") {
+      onQuit();
+      return;
+    }
+    setConfirmingQuit(true);
+  }
+
   // Forward-only enforcement (only when enabled): accept a change ONLY if it
   // purely appends — blocks backspace, delete, cut, select-replace, mid-paste.
   function onChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -364,6 +390,37 @@ function Running({
 
   return (
     <main className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-10">
+      {/* Quit the session (top-left), mirroring the goal indicator. */}
+      <div className="fixed left-6 top-6 z-10">
+        {confirmingQuit ? (
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-muted">Quit and lose this?</span>
+            <button
+              onClick={onQuit}
+              className="font-medium text-rose-600 transition-colors hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300"
+            >
+              Quit
+            </button>
+            <button
+              onClick={() => {
+                setConfirmingQuit(false);
+                textRef.current?.focus();
+              }}
+              className="text-faint transition-colors hover:text-muted"
+            >
+              keep writing
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={quit}
+            className="text-sm text-faint transition-colors hover:text-foreground"
+          >
+            ← Quit
+          </button>
+        )}
+      </div>
+
       {/* Unobtrusive goal indicator. */}
       <div
         className={`pointer-events-none fixed right-6 top-6 z-10 tabular-nums text-sm ${
