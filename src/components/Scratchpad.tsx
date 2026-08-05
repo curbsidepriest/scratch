@@ -134,18 +134,23 @@ export function Scratchpad() {
       <header className="mb-8 flex items-center justify-between gap-4">
         <Wordmark />
         <nav className="flex items-center gap-3">
-          {streak.streak > 0 && (
-            <span
-              title={`${streak.streak}-day writing streak${
-                streak.best > streak.streak ? ` · best ${streak.best}` : ""
-              }`}
-              className={`flex items-center gap-1 text-xs font-medium ${
-                streak.writtenToday ? "text-orange-500" : "text-muted"
-              }`}
-            >
-              🔥 {streak.streak}
-            </span>
-          )}
+          {/* Permanent, minimal streak display — always here, orange once
+              you've written today, muted otherwise. */}
+          <span
+            title={
+              streak.streak > 0
+                ? `${streak.streak}-day writing streak${
+                    streak.best > streak.streak ? ` · best ${streak.best}` : ""
+                  }`
+                : "No streak yet — write today to start one"
+            }
+            className={`flex items-center gap-1 text-xs font-medium tabular-nums ${
+              streak.writtenToday ? "text-orange-500" : "text-faint"
+            }`}
+          >
+            <span className={streak.writtenToday ? "" : "grayscale"}>🔥</span>
+            {streak.streak}
+          </span>
           {/* Library — navigation, set apart from the creative actions. */}
           <Link
             href="/sparks"

@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import type { DayCell, StreakInfo } from "@/lib/streak";
 
 function WeekStrip({ week }: { week: DayCell[] }) {
@@ -43,7 +45,35 @@ export function StreakBanner({
 }) {
   const { writtenToday, streak, best, week } = info;
 
+  // Let the user hide the CTA for the rest of the day (it returns tomorrow).
+  // The permanent flame in the header is the always-on streak display.
+  const { user } = useUser();
+  const hideKey = user
+    ? `scratch:streak-cta-hidden:${user.id}:${info.todayKey}`
+    : null;
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    if (!hideKey) return;
+    try {
+      setHidden(!!localStorage.getItem(hideKey));
+    } catch {
+      /* localStorage unavailable — just show it */
+    }
+  }, [hideKey]);
+
+  function hideForToday() {
+    if (hideKey) {
+      try {
+        localStorage.setItem(hideKey, "1");
+      } catch {
+        /* ignore */
+      }
+    }
+    setHidden(true);
+  }
+
   if (!writtenToday) {
+    if (hidden) return null;
     return (
       <motion.section
         initial={{ opacity: 0, y: -8 }}
@@ -67,14 +97,22 @@ export function StreakBanner({
             <WeekStrip week={week} />
           </div>
 
-          <motion.button
-            onClick={onStart}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            className="shrink-0 rounded-full bg-foreground px-6 py-3.5 text-sm font-semibold text-background shadow-sm"
-          >
-            Write for 5 minutes →
-          </motion.button>
+          <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+            <motion.button
+              onClick={onStart}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="rounded-full bg-foreground px-6 py-3.5 text-sm font-semibold text-background shadow-sm"
+            >
+              Write for 5 minutes →
+            </motion.button>
+            <button
+              onClick={hideForToday}
+              className="text-[11px] text-faint transition-colors hover:text-muted"
+            >
+              hide for today
+            </button>
+          </div>
         </div>
       </motion.section>
     );

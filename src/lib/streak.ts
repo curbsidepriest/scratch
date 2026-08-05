@@ -15,6 +15,7 @@ export interface StreakInfo {
   streak: number; // current run of consecutive days, through today (or yesterday if today's still open)
   best: number; // longest run ever
   week: DayCell[]; // the last 7 days, oldest → today
+  todayKey: string; // local YYYY-MM-DD, e.g. for a per-day dismissal key
 }
 
 function localDayKey(d: Date): string {
@@ -34,7 +35,8 @@ export function computeStreak(
 
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
-  const writtenToday = days.has(localDayKey(today));
+  const todayKey = localDayKey(today);
+  const writtenToday = days.has(todayKey);
 
   // Current streak: count back from today (or from yesterday if today is still
   // open, so the streak stays "alive" until midnight).
@@ -74,5 +76,5 @@ export function computeStreak(
     });
   }
 
-  return { writtenToday, streak, best, week };
+  return { writtenToday, streak, best, week, todayKey };
 }
