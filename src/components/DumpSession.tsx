@@ -33,7 +33,8 @@ export function DumpSession({ quickStart = false }: { quickStart?: boolean }) {
   const [goal, setGoal] = useState<Goal>("time");
   const [minutes, setMinutes] = useState<number>(DEFAULT_MINUTES);
   const [wordTarget, setWordTarget] = useState<number>(DEFAULT_WORDS);
-  const [noBackspace, setNoBackspace] = useState(true);
+  // Default to backspace enabled — a gentler default for the daily 5-min habit.
+  const [noBackspace, setNoBackspace] = useState(false);
   const [review, setReview] = useState<{
     scratchId: string;
     suggestion: SegmentSuggestion;
