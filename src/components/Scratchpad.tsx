@@ -5,7 +5,7 @@ import { AnimatePresence } from "motion/react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   createScratch,
   commitSnippets,
@@ -24,6 +24,8 @@ import { Spark } from "./Spark";
 import { PromotionOverlay } from "./PromotionOverlay";
 import { SegmentationReview } from "./SegmentationReview";
 import { Onboarding } from "./Onboarding";
+import { StreakBanner } from "./StreakBanner";
+import { computeStreak } from "@/lib/streak";
 
 const SCRATCHES_KEY = ["scratches"];
 const SPARK_KEY = ["spark"];
@@ -47,6 +49,12 @@ export function Scratchpad() {
     queryKey: SCRATCHES_KEY,
     queryFn: fetchScratches,
   });
+
+  // Daily-writing streak, derived from what's already been written (local time).
+  const streak = useMemo(
+    () => computeStreak(scratches.map((s) => s.createdAt)),
+    [scratches],
+  );
 
   const { data: spark } = useQuery({
     queryKey: SPARK_KEY,
@@ -126,6 +134,18 @@ export function Scratchpad() {
       <header className="mb-8 flex items-center justify-between gap-4">
         <Wordmark />
         <nav className="flex items-center gap-3">
+          {streak.streak > 0 && (
+            <span
+              title={`${streak.streak}-day writing streak${
+                streak.best > streak.streak ? ` · best ${streak.best}` : ""
+              }`}
+              className={`flex items-center gap-1 text-xs font-medium ${
+                streak.writtenToday ? "text-orange-500" : "text-muted"
+              }`}
+            >
+              🔥 {streak.streak}
+            </span>
+          )}
           {/* Library — navigation, set apart from the creative actions. */}
           <Link
             href="/sparks"
@@ -156,6 +176,10 @@ export function Scratchpad() {
           <UserButton />
         </nav>
       </header>
+
+      {!isLoading && (
+        <StreakBanner info={streak} onStart={() => router.push("/dump?quick=1")} />
+      )}
 
       <section className="mb-10">
         <Composer onCapture={(content) => capture.mutate(content)} />

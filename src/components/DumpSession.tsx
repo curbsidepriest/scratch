@@ -8,9 +8,9 @@ import { wordCount } from "@/lib/domain";
 import type { SegmentSuggestion } from "@/lib/types";
 import { SegmentationReview } from "./SegmentationReview";
 
-const DURATIONS = [10, 20, 30] as const;
+const DURATIONS = [5, 10, 20, 30] as const;
 const WORD_TARGETS = [250, 500, 750] as const;
-const DEFAULT_MINUTES = 20;
+const DEFAULT_MINUTES = 5;
 const DEFAULT_WORDS = 500;
 
 type Goal = "time" | "words";
@@ -23,11 +23,13 @@ function formatClock(totalSeconds: number): string {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-export function DumpSession() {
+export function DumpSession({ quickStart = false }: { quickStart?: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [phase, setPhase] = useState<Phase>("setup");
+  // quickStart (from the home CTA's "Write for 5 minutes") skips setup and drops
+  // straight into a 5-minute sprint — one click from nudge to writing.
+  const [phase, setPhase] = useState<Phase>(quickStart ? "running" : "setup");
   const [goal, setGoal] = useState<Goal>("time");
   const [minutes, setMinutes] = useState<number>(DEFAULT_MINUTES);
   const [wordTarget, setWordTarget] = useState<number>(DEFAULT_WORDS);
