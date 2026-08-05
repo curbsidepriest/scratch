@@ -3,12 +3,14 @@
 import { motion } from "motion/react";
 import {
   DndContext,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   closestCenter,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +24,7 @@ import {
   reorderBlockSnippets,
   reorderBlocks,
 } from "@/lib/api";
+import type { BlockDTO, ProjectDTO } from "@/lib/types";
 import { BankSidebar } from "./BankSidebar";
 import { EditablePhrase } from "./project/EditablePhrase";
 import { ModeTabs, type Mode } from "./project/ModeTabs";
@@ -42,12 +45,46 @@ export function ProjectShell({ id }: { id: string }) {
     queryFn: () => fetchBlocks(id),
   });
 
+  // A live preview of what's being dragged, so it can follow the cursor.
+  const [activeDrag, setActiveDrag] = useState<{
+    kind: "snippet" | "block";
+    text: string;
+  } | null>(null);
+
   const invalidateBlocks = () =>
     queryClient.invalidateQueries({ queryKey: ["blocks", id] });
 
+  // Fill a block with a snippet — optimistic so it appears the instant you drop,
+  // not after a server round-trip + refetch.
   const fill = useMutation({
     mutationFn: (a: { blockId: string; snippetId: string }) =>
       addBlockSnippet(a.blockId, a.snippetId),
+    onMutate: async ({ blockId, snippetId }) => {
+      await queryClient.cancelQueries({ queryKey: ["blocks", id] });
+      const prev = queryClient.getQueryData<BlockDTO[]>(["blocks", id]);
+      const proj = queryClient.getQueryData<ProjectDTO>(["project", id]);
+      const snip = proj?.snippets.find((ps) => ps.snippet.id === snippetId)?.snippet;
+      if (prev && snip) {
+        queryClient.setQueryData<BlockDTO[]>(
+          ["blocks", id],
+          prev.map((b) =>
+            b.id !== blockId || b.snippets.some((s) => s.id === snippetId)
+              ? b
+              : {
+                  ...b,
+                  snippets: [
+                    ...b.snippets,
+                    { id: snip.id, content: snip.content, label: snip.label },
+                  ],
+                },
+          ),
+        );
+      }
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(["blocks", id], ctx.prev);
+    },
     onSettled: invalidateBlocks,
   });
   const reorder = useMutation({
@@ -76,7 +113,22 @@ export function ProjectShell({ id }: { id: string }) {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  function onDragStart(e: DragStartEvent) {
+    const data = e.active.data.current;
+    if (data?.type === "bank" || data?.type === "snippet") {
+      const snippetId = data.snippetId as string;
+      const text =
+        project?.snippets.find((ps) => ps.snippet.id === snippetId)?.snippet
+          .content ?? "";
+      setActiveDrag({ kind: "snippet", text });
+    } else {
+      const label = blocks.find((b) => b.id === String(e.active.id))?.label ?? "";
+      setActiveDrag({ kind: "block", text: label });
+    }
+  }
+
   function onDragEnd(e: DragEndEvent) {
+    setActiveDrag(null);
     const { active, over } = e;
     if (!over) return;
     const aType = active.data.current?.type;
@@ -184,7 +236,9 @@ export function ProjectShell({ id }: { id: string }) {
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragStart={onDragStart}
         onDragEnd={onDragEnd}
+        onDragCancel={() => setActiveDrag(null)}
       >
         <div className="flex flex-col gap-10 md:flex-row md:gap-12">
           <section className="min-w-0 flex-1">
@@ -211,6 +265,21 @@ export function ProjectShell({ id }: { id: string }) {
             />
           )}
         </div>
+
+        {/* The dragged item, following the cursor, so drops feel deliberate. */}
+        <DragOverlay dropAnimation={null}>
+          {activeDrag ? (
+            activeDrag.kind === "block" ? (
+              <div className="max-w-xs rounded-lg border border-accent bg-surface px-4 py-3 text-sm font-medium text-foreground shadow-lg">
+                {activeDrag.text || "Block"}
+              </div>
+            ) : (
+              <div className="max-w-xs rounded-md border-l-2 border-emerald-500 bg-surface px-3 py-2 text-[13px] leading-snug text-muted shadow-lg">
+                <p className="line-clamp-4">{activeDrag.text}</p>
+              </div>
+            )
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </motion.main>
   );
