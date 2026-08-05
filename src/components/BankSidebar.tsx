@@ -118,8 +118,10 @@ export function BankSidebar({
 
   return (
     <aside className="w-full shrink-0 md:w-72">
-      <div className="sticky top-10">
-        <h2 className="mb-3 text-[11px] uppercase tracking-wider text-faint">
+      {/* The bank scrolls on its own — a long list of snippets stays reachable
+          without scrolling the essay blocks. Header pinned; only the list moves. */}
+      <div className="sticky top-10 flex max-h-[calc(100vh-5rem)] flex-col">
+        <h2 className="mb-3 shrink-0 text-[11px] uppercase tracking-wider text-faint">
           Bank · {snippets.length}
           {draggable && (
             <span className="ml-2 normal-case tracking-normal text-faint">
@@ -127,36 +129,38 @@ export function BankSidebar({
             </span>
           )}
         </h2>
-        <ul className="flex flex-col gap-1.5">
-          {included.map((ps) => (
-            <BankItem
-              key={ps.snippet.id}
-              ps={ps}
-              projectId={projectId}
-              draggable={draggable}
-              editable
-            />
-          ))}
-        </ul>
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          <ul className="flex flex-col gap-1.5">
+            {included.map((ps) => (
+              <BankItem
+                key={ps.snippet.id}
+                ps={ps}
+                projectId={projectId}
+                draggable={draggable}
+                editable
+              />
+            ))}
+          </ul>
 
-        {benched.length > 0 && (
-          <>
-            <h3 className="mb-2 mt-5 text-[11px] uppercase tracking-wider text-faint">
-              Benched · {benched.length}
-            </h3>
-            <ul className="flex flex-col gap-1.5">
-              {benched.map((ps) => (
-                <BankItem
-                  key={ps.snippet.id}
-                  ps={ps}
-                  projectId={projectId}
-                  draggable={false}
-                  editable={false}
-                />
-              ))}
-            </ul>
-          </>
-        )}
+          {benched.length > 0 && (
+            <>
+              <h3 className="mb-2 mt-5 text-[11px] uppercase tracking-wider text-faint">
+                Benched · {benched.length}
+              </h3>
+              <ul className="flex flex-col gap-1.5">
+                {benched.map((ps) => (
+                  <BankItem
+                    key={ps.snippet.id}
+                    ps={ps}
+                    projectId={projectId}
+                    draggable={false}
+                    editable={false}
+                  />
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
       </div>
     </aside>
   );
