@@ -1,9 +1,8 @@
 "use client";
 
-export type Mode = "filter" | "architect" | "editor";
+export type Mode = "architect" | "editor";
 
 const MODES: { key: Mode; label: string; hint: string }[] = [
-  { key: "filter", label: "Filter", hint: "what belongs" },
   { key: "architect", label: "Architect", hint: "shape & flow" },
   { key: "editor", label: "Editor", hint: "the sentences" },
 ];

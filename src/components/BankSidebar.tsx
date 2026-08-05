@@ -3,7 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { updateSnippet } from "@/lib/api";
+import { updateProjectSnippet, updateSnippet } from "@/lib/api";
 import type { ProjectSnippetDTO } from "@/lib/types";
 import { EditableSnippet } from "./EditableSnippet";
 
@@ -33,6 +33,15 @@ function BankItem({
       queryClient.invalidateQueries({ queryKey: ["blocks", projectId] });
       queryClient.invalidateQueries({ queryKey: ["snippets"] });
     },
+  });
+
+  // Set aside (bench) / bring back — nothing is destroyed, benched snippets
+  // just drop out of the drag source and the Editor's pool.
+  const setIncluded = useMutation({
+    mutationFn: (included: boolean) =>
+      updateProjectSnippet(ps.id, { included }),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
   });
 
   return (
@@ -74,6 +83,15 @@ function BankItem({
               {ps.snippet.content}
             </button>
           )}
+          <div className="mt-1.5 flex justify-end">
+            <button
+              onClick={() => setIncluded.mutate(ps.included ? false : true)}
+              disabled={setIncluded.isPending}
+              className="text-[10px] text-faint transition-colors hover:text-muted disabled:opacity-50"
+            >
+              {ps.included ? "set aside" : "bring back"}
+            </button>
+          </div>
         </div>
       </div>
     </li>

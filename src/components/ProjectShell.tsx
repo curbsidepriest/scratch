@@ -25,13 +25,12 @@ import {
 import { BankSidebar } from "./BankSidebar";
 import { EditablePhrase } from "./project/EditablePhrase";
 import { ModeTabs, type Mode } from "./project/ModeTabs";
-import { FilterMode } from "./project/FilterMode";
 import { ArchitectMode } from "./project/ArchitectMode";
 import { EditorMode } from "./project/EditorMode";
 
 export function ProjectShell({ id }: { id: string }) {
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<Mode>("filter");
+  const [mode, setMode] = useState<Mode>("architect");
 
   const { data: project, isLoading, isError } = useQuery({
     queryKey: ["project", id],
@@ -189,9 +188,6 @@ export function ProjectShell({ id }: { id: string }) {
       >
         <div className="flex flex-col gap-10 md:flex-row md:gap-12">
           <section className="min-w-0 flex-1">
-            {mode === "filter" && (
-              <FilterMode projectId={project.id} snippets={project.snippets} />
-            )}
             {mode === "architect" && (
               <ArchitectMode projectId={project.id} blocks={blocks} />
             )}
@@ -205,8 +201,8 @@ export function ProjectShell({ id }: { id: string }) {
           </section>
 
           {/* The bank is a permanent column only in Architect, where it's the
-              drag source for filling blocks. Filter already lists every snippet
-              (active + benched), and the Editor pulls snippets in on demand. */}
+              drag source for filling blocks (and where snippets are set aside /
+              brought back). The Editor pulls snippets in on demand. */}
           {mode === "architect" && (
             <BankSidebar
               projectId={project.id}
