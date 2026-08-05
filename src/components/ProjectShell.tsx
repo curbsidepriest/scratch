@@ -40,7 +40,7 @@ export function ProjectShell({ id }: { id: string }) {
     queryFn: () => fetchProject(id),
   });
 
-  const { data: blocks = [] } = useQuery({
+  const { data: blocks = [], isPending: blocksLoading } = useQuery({
     queryKey: ["blocks", id],
     queryFn: () => fetchBlocks(id),
   });
@@ -243,7 +243,11 @@ export function ProjectShell({ id }: { id: string }) {
         <div className="flex flex-col gap-10 md:flex-row md:gap-12">
           <section className="min-w-0 flex-1">
             {mode === "architect" && (
-              <ArchitectMode projectId={project.id} blocks={blocks} />
+              <ArchitectMode
+                projectId={project.id}
+                blocks={blocks}
+                loading={blocksLoading}
+              />
             )}
             {mode === "editor" && (
               <EditorMode

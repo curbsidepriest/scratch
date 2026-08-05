@@ -18,9 +18,11 @@ import { EditableSnippet } from "../EditableSnippet";
 export function ArchitectMode({
   projectId,
   blocks,
+  loading = false,
 }: {
   projectId: string;
   blocks: BlockDTO[];
+  loading?: boolean;
 }) {
   const queryClient = useQueryClient();
   const invalidate = () => {
@@ -70,7 +72,9 @@ export function ArchitectMode({
 
       {blocks.length === 0 && (
         <p className="mb-4 py-8 text-center text-sm text-faint">
-          No blocks yet. Name the first beat of the piece below.
+          {loading
+            ? "Loading…"
+            : "No blocks yet. Name the first beat of the piece below."}
         </p>
       )}
 

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { currentUserId, unauthorized } from "@/lib/auth";
-import { getLinterService } from "@/lib/services/linter";
 
 async function ownsProject(userId: string, projectId: string) {
   return !!(await prisma.project.findFirst({
@@ -10,7 +9,12 @@ async function ownsProject(userId: string, projectId: string) {
   }));
 }
 
-/** GET /api/projects/:id/blocks — ordered blocks, each annotated with any gap. */
+/** GET /api/projects/:id/blocks — ordered blocks with their snippets.
+ *
+ * Deliberately does NOT run the Linter here: gap detection is an LLM call
+ * (~seconds) and must not sit on the path that simply loads your blocks, or the
+ * Architect view stalls on "No blocks yet". Gaps are surfaced on demand instead
+ * (gap is always null from this endpoint). */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -32,17 +36,6 @@ export async function GET(
     },
   });
 
-  const linter = getLinterService();
-  const gaps = await linter.findGaps(
-    blocks.map((b) => ({
-      id: b.id,
-      label: b.label,
-      body: b.body,
-      filled: b.blockSnippets.length > 0,
-    })),
-  );
-  const gapByBlock = new Map(gaps.map((g) => [g.blockId, g.reason]));
-
   return NextResponse.json(
     blocks.map((b) => ({
       id: b.id,
@@ -56,7 +49,7 @@ export async function GET(
         content: bs.snippet.content,
         label: bs.snippet.label,
       })),
-      gap: gapByBlock.get(b.id) ?? null,
+      gap: null,
     })),
   );
 }
