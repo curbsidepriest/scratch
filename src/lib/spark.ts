@@ -57,7 +57,7 @@ export async function evaluateSpark(
 
   if (!opts.force) {
     const lastDecision = await prisma.throughline.findFirst({
-      where: { userId, status: { in: ["dismissed", "promoted"] } },
+      where: { userId, status: { in: ["dismissed", "promoted", "saved"] } },
       orderBy: { createdAt: "desc" },
     });
     if (lastDecision) {
@@ -77,10 +77,16 @@ export async function evaluateSpark(
   // A forced run that finds nothing must not wipe an existing spark.
   if (!candidate) return active ? serializeSpark(active) : null;
 
-  const dismissedSame = await prisma.throughline.findFirst({
-    where: { userId, phrase: candidate.phrase, status: "dismissed" },
+  // Don't re-surface a phrase the writer already set aside — dismissed for good
+  // or shelved in the Sparks library.
+  const setAsideSame = await prisma.throughline.findFirst({
+    where: {
+      userId,
+      phrase: candidate.phrase,
+      status: { in: ["dismissed", "saved"] },
+    },
   });
-  if (dismissedSame) return active ? serializeSpark(active) : null;
+  if (setAsideSame) return active ? serializeSpark(active) : null;
 
   // Forced re-run with a spark already showing: keep it if the theme is the
   // same, otherwise replace it with the fresh one (evidence cascades on delete).

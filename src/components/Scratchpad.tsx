@@ -10,7 +10,7 @@ import {
   createScratch,
   commitSnippets,
   createThroughline,
-  dismissThroughline,
+  saveThroughline,
   evaluateSpark,
   fetchScratches,
   fetchSpark,
@@ -65,13 +65,18 @@ export function Scratchpad() {
     }
   };
 
-  const dismiss = useMutation({
-    mutationFn: (id: string) => dismissThroughline(id),
+  // "Not now" shelves the spark into the Sparks library rather than discarding
+  // it — the writer can develop it later.
+  const shelve = useMutation({
+    mutationFn: (id: string) => saveThroughline(id),
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: SPARK_KEY });
       queryClient.setQueryData(SPARK_KEY, null);
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: SPARK_KEY }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: SPARK_KEY });
+      queryClient.invalidateQueries({ queryKey: ["sparks"] });
+    },
   });
 
   // Manual, on-demand spark: ask the Ranker to look right now (force = skip the
@@ -122,6 +127,12 @@ export function Scratchpad() {
         <Wordmark />
         <nav className="flex items-center gap-3">
           {/* Library — navigation, set apart from the creative actions. */}
+          <Link
+            href="/sparks"
+            className="text-xs text-faint transition-colors hover:text-foreground"
+          >
+            Sparks
+          </Link>
           <Link
             href="/pieces"
             className="text-xs text-faint transition-colors hover:text-foreground"
@@ -191,8 +202,8 @@ export function Scratchpad() {
               onDevelop={() =>
                 setPromoting({ throughlineId: spark.id, phrase: spark.phrase })
               }
-              onDismiss={() => dismiss.mutate(spark.id)}
-              dismissing={dismiss.isPending}
+              onDismiss={() => shelve.mutate(spark.id)}
+              dismissing={shelve.isPending}
             />
           )}
         </AnimatePresence>

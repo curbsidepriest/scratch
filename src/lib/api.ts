@@ -125,6 +125,19 @@ export async function dismissThroughline(id: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to dismiss");
 }
 
+/** Shelve a spark for later ("Not now") — it moves to the Sparks library. */
+export async function saveThroughline(id: string): Promise<void> {
+  const res = await fetch(`/api/throughlines/${id}/save`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to save spark");
+}
+
+/** The writer's shelved sparks, for the Sparks library. */
+export async function fetchSavedSparks(): Promise<SparkDTO[]> {
+  const res = await fetch("/api/sparks");
+  if (!res.ok) throw new Error("Failed to load sparks");
+  return res.json();
+}
+
 export async function createThroughline(
   phrase: string,
 ): Promise<{ id: string }> {
