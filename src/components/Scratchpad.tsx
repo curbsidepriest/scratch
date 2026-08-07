@@ -43,6 +43,7 @@ export function Scratchpad() {
   const [review, setReview] = useState<{
     scratchId: string;
     suggestion: SegmentSuggestion;
+    source: string;
   } | null>(null);
 
   const { data: scratches = [], isLoading } = useQuery({
@@ -100,23 +101,29 @@ export function Scratchpad() {
     onError: () => setSparkNote("Couldn't look right now. Try again."),
   });
 
-  // Capture → a scratch. Short one-paragraph captures segment silently; longer
-  // sessions open the review so the writer curates the split (spec §3).
+  // Quick capture → a scratch. A quick capture is a deliberate keeper, so it
+  // goes straight into the gem library as one snippet (or the segmenter's single
+  // pick). Only when the segmenter finds MORE than one gem do we open the review
+  // to let the writer curate (spec §3).
   const capture = useMutation({
     mutationFn: (content: string) => createScratch(content, "freewrite"),
-    onSuccess: async ({ id, suggestion }) => {
-      if (suggestion.snippets.length <= 1) {
-        await commitSnippets(id, suggestion.scratchLabel, suggestion.snippets);
-        afterChange();
-      } else {
-        setReview({ scratchId: id, suggestion });
+    onSuccess: async ({ id, suggestion }, content) => {
+      if (suggestion.snippets.length > 1) {
+        setReview({ scratchId: id, suggestion, source: content });
+        return;
       }
+      const gem =
+        suggestion.snippets[0] ??
+        { content: content.trim(), label: suggestion.scratchLabel };
+      await commitSnippets(id, suggestion.scratchLabel, [gem]);
+      afterChange();
     },
   });
 
   async function openSegment(scratchId: string) {
     const suggestion = await fetchSuggestion(scratchId);
-    setReview({ scratchId, suggestion });
+    const source = scratches.find((s) => s.id === scratchId)?.content ?? "";
+    setReview({ scratchId, suggestion, source });
   }
 
   async function beginOwnPiece() {
@@ -152,6 +159,12 @@ export function Scratchpad() {
             {streak.streak}
           </span>
           {/* Library — navigation, set apart from the creative actions. */}
+          <Link
+            href="/gems"
+            className="text-xs text-faint transition-colors hover:text-foreground"
+          >
+            Gems
+          </Link>
           <Link
             href="/sparks"
             className="text-xs text-faint transition-colors hover:text-foreground"
@@ -275,6 +288,7 @@ export function Scratchpad() {
           <SegmentationReview
             scratchId={review.scratchId}
             suggestion={review.suggestion}
+            source={review.source}
             onDone={() => {
               setReview(null);
               afterChange();
@@ -286,6 +300,17 @@ export function Scratchpad() {
       <div className="mb-6 h-px w-full bg-border" />
 
       <section className="flex-1">
+        <div className="mb-4 flex items-baseline justify-between">
+          <h2 className="text-[11px] uppercase tracking-wider text-faint">
+            Sessions
+          </h2>
+          <Link
+            href="/gems"
+            className="text-[11px] text-faint transition-colors hover:text-foreground"
+          >
+            Gems →
+          </Link>
+        </div>
         {isLoading ? (
           <p className="py-16 text-center text-sm text-faint">Loading…</p>
         ) : (

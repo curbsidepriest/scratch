@@ -38,6 +38,7 @@ export function DumpSession({ quickStart = false }: { quickStart?: boolean }) {
   const [review, setReview] = useState<{
     scratchId: string;
     suggestion: SegmentSuggestion;
+    source: string;
   } | null>(null);
 
   async function goHome() {
@@ -73,6 +74,7 @@ export function DumpSession({ quickStart = false }: { quickStart?: boolean }) {
       <SegmentationReview
         scratchId={review.scratchId}
         suggestion={review.suggestion}
+        source={review.source}
         onDone={goHome}
       />
     );
@@ -91,7 +93,7 @@ export function DumpSession({ quickStart = false }: { quickStart?: boolean }) {
           return;
         }
         const { id, suggestion } = await createScratch(trimmed, "dump");
-        setReview({ scratchId: id, suggestion });
+        setReview({ scratchId: id, suggestion, source: trimmed });
         setPhase("review");
       }}
       onQuit={() => router.push("/")}

@@ -67,7 +67,7 @@ function ScratchCard({
           <span className="shrink-0 text-xs text-faint">
             {relativeTime(scratch.createdAt)} · {MODE_LABELS[scratch.sourceMode] ?? scratch.sourceMode}
             {" · "}
-            {count > 0 ? `${count} snippet${count === 1 ? "" : "s"}` : "not split"}
+            {count > 0 ? `${count} gem${count === 1 ? "" : "s"}` : "no gems"}
           </span>
         </button>
         <DeleteControl
@@ -88,7 +88,7 @@ function ScratchCard({
                 onClick={() => onSegment(scratch.id)}
                 className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:text-foreground"
               >
-                Break into snippets →
+                Find gems →
               </button>
             </div>
           ) : (
@@ -103,7 +103,7 @@ function ScratchCard({
               ))}
               {active.length === 0 && (
                 <p className="text-sm text-faint">
-                  Every snippet here is archived.
+                  Every gem here is archived.
                 </p>
               )}
 

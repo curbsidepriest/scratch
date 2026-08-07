@@ -27,11 +27,20 @@ and the default action. Opening the app means opening the Scratchpad. The user
 writes freely into it forever; it is low-stakes, singular, and never asks the user
 to name or commit to anything.
 
-Everything the user ever writes is a **Snippet** living in the Scratchpad.
+Everything the user ever writes is saved verbatim as a **Scratch** — a dated raw
+writing session that is never lost and is always browsable. A **Snippet** is
+something narrower: a *gem* extracted from a scratch — a sharp line, a novel
+framing, a clean inversion, a real compression. Snippets are the curated library;
+scratches are the full archive. Most of what you write stays in the scratch and
+never becomes a snippet, and that is correct: the snippet library must be a
+genuine collection of good atomic ideas, not a comprehensive catalogue of every
+thought. Extraction is deliberately **conservative** — when in doubt, leave it
+out. Nothing is lost either way, because the whole session remains in its scratch.
 
 A background process (the **Ranker**, a.k.a. the "spark") quietly reads the
-accumulating snippets and, *rarely*, surfaces a **Through-line**: a candidate idea
-worth developing. It is deliberately quiet — see §5.
+accumulating snippets (the gems, not the raw scratches) and, *rarely*, surfaces a
+**Through-line**: a candidate idea worth developing. It is deliberately quiet —
+see §5.
 
 When the user adopts a through-line (or defines their own), it spawns a
 **Project**. The project pulls in relevant snippets (shared, never moved — see
@@ -101,12 +110,22 @@ Everything else can be rough but must exist and be navigable.
 
 - Default screen on app open. The primary action is simply **write**. There is no
   prominent "New Document" button; the cursor is ready in the writing surface.
-- Text is captured as **snippets**. A snippet is a chunk of text with metadata
-  (see §7 schema). Define snippet boundaries simply for v1: a snippet is created
-  per writing session or per explicit break (e.g. blank-line-delimited blocks, or
-  one snippet per dump session). Keep this dumb and predictable in v1; we can get
-  clever later.
-- All snippets are always visible/scrollable here in reverse-chronological order.
+- Text is captured as a **Scratch** — the raw session, saved verbatim (see §7
+  schema). Scratches are always preserved and browsable, dated, in reverse-
+  chronological order. This is the archive of everything you have written.
+- **Snippets are gems extracted from a scratch**, not a partition of it. After a
+  session, the Segmenter proposes 0..N gems — verbatim slices worth keeping on
+  their own (a sharp line, a framing, an inversion, a compression). Returning
+  **zero is expected and common**; a rambling warm-up may yield nothing, a dense
+  session may yield a few. Extraction is conservative on purpose so the snippet
+  library stays a real library of good ideas rather than noise to navigate.
+- The user always **reviews** the proposed gems before they land: reject an over-
+  eager pick, rescue a passage the segmenter missed, fix a label. It will not be
+  perfect, and it does not have to be — nothing is ever lost, because the full
+  session stays in its scratch.
+- **Two surfaces, kept separate:** the raw sessions (dated scratches) are
+  browsable on their own, and the gems (snippets) have their own library view.
+  Only the gems feed the spark.
 - **Quick-capture from anywhere:** from any mode or project, the user can drop a
   new thought that lands in the Scratchpad. The *generative* act (dumping) is
   always available everywhere; the *organizing* acts (filter/architect/edit) are
@@ -133,9 +152,10 @@ The ritual that fills the Scratchpad. A focused sprint.
 
 ## 5. The Ranker (the "spark") — heart of the product
 
-A background process that reads accumulated snippets and *occasionally* surfaces a
-**through-line**: something worth writing about, defined loosely enough that the
-user still owns the thesis.
+A background process that reads accumulated snippets — the curated gems, never the
+raw scratches — and *occasionally* surfaces a **through-line**: something worth
+writing about, defined loosely enough that the user still owns the thesis. Feeding
+it gems rather than every paragraph is what keeps the spark signal high.
 
 ### Behavioral requirements (these define the feel — get them right)
 - **It is quiet by default.** Most of the time there is no spark, and that is

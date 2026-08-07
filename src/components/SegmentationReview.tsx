@@ -11,24 +11,29 @@ interface Draft {
 }
 
 /**
- * Human-in-the-loop segmentation (spec §3, philosophy). The app SUGGESTS where
- * a scratch splits into paragraph snippets and a boring descriptive label for
- * each; the writer adjusts the boundaries and labels before anything is saved.
- * Content stays the writer's verbatim words.
+ * Human-in-the-loop gem review (spec §3, philosophy). The Segmenter proposes
+ * 0..N GEMS extracted from the session — verbatim slices worth keeping on their
+ * own. The writer confirms, drops over-eager picks, fixes labels, or rescues a
+ * passage the segmenter missed. Nothing here rewrites the writer's words; the
+ * full session is always preserved as its scratch regardless of what is kept.
  */
 export function SegmentationReview({
   scratchId,
   suggestion,
+  source,
   onDone,
 }: {
   scratchId: string;
   suggestion: SegmentSuggestion;
+  /** The raw session text, so the writer can lift a missed passage verbatim. */
+  source?: string;
   onDone: () => void;
 }) {
   const [scratchLabel, setScratchLabel] = useState(suggestion.scratchLabel);
   const [drafts, setDrafts] = useState<Draft[]>(
     suggestion.snippets.map((s) => ({ content: s.content, label: s.label })),
   );
+  const [showSource, setShowSource] = useState(false);
   const [saving, setSaving] = useState(false);
 
   function update(i: number, patch: Partial<Draft>) {
@@ -37,15 +42,8 @@ export function SegmentationReview({
   function remove(i: number) {
     setDrafts((prev) => prev.filter((_, j) => j !== i));
   }
-  function mergeDown(i: number) {
-    setDrafts((prev) => {
-      if (i >= prev.length - 1) return prev;
-      const merged: Draft = {
-        content: `${prev[i].content}\n\n${prev[i + 1].content}`,
-        label: prev[i].label,
-      };
-      return [...prev.slice(0, i), merged, ...prev.slice(i + 2)];
-    });
+  function addGem() {
+    setDrafts((prev) => [...prev, { content: "", label: "" }]);
   }
 
   async function save() {
@@ -65,6 +63,8 @@ export function SegmentationReview({
     }
   }
 
+  const none = drafts.length === 0;
+
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/70 px-4 py-[6vh] backdrop-blur-sm"
@@ -80,11 +80,12 @@ export function SegmentationReview({
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="mb-1 text-[11px] uppercase tracking-wider text-faint">
-          Break this into snippets
+          Keep the gems
         </div>
         <p className="mb-5 text-sm text-muted">
-          Still your words — this just proposes where they divide. Adjust the
-          split, fix the labels, drop the noise.
+          These are the lines worth keeping on their own — still your exact words.
+          Drop anything that isn&apos;t a real gem, and add one if a good bit was
+          missed. Everything else stays safe in the session either way.
         </p>
 
         <label className="mb-1 block text-[11px] uppercase tracking-wider text-faint">
@@ -108,31 +109,48 @@ export function SegmentationReview({
               <textarea
                 value={d.content}
                 onChange={(e) => update(i, { content: e.target.value })}
-                rows={Math.min(6, Math.max(2, Math.ceil(d.content.length / 70)))}
+                placeholder="paste or type the exact words of the gem"
+                rows={Math.min(6, Math.max(2, Math.ceil((d.content.length || 40) / 70)))}
                 className="w-full resize-none bg-transparent text-[14px] leading-relaxed text-foreground focus:outline-none"
               />
               <div className="mt-1 flex items-center gap-3 text-[11px] text-faint">
-                {i < drafts.length - 1 && (
-                  <button onClick={() => mergeDown(i)} className="hover:text-muted">
-                    merge with next
-                  </button>
-                )}
                 <button onClick={() => remove(i)} className="hover:text-muted">
                   drop
                 </button>
               </div>
             </div>
           ))}
-          {drafts.length === 0 && (
+          {none && (
             <p className="py-6 text-center text-sm text-faint">
-              Nothing to keep. You can still leave the session whole.
+              No gems picked out — that&apos;s normal. Add one below if a line
+              deserves it, or just leave the session whole.
             </p>
           )}
         </div>
 
+        <div className="mt-3 flex items-center gap-4 text-[11px] text-faint">
+          <button onClick={addGem} className="hover:text-foreground">
+            + add a gem
+          </button>
+          {source && (
+            <button
+              onClick={() => setShowSource((v) => !v)}
+              className="hover:text-muted"
+            >
+              {showSource ? "hide session" : "view session"}
+            </button>
+          )}
+        </div>
+
+        {showSource && source && (
+          <p className="mt-3 max-h-56 overflow-y-auto whitespace-pre-wrap rounded-md bg-background p-3 text-[13px] leading-relaxed text-faint">
+            {source}
+          </p>
+        )}
+
         <div className="mt-7 flex items-center justify-between">
           <span className="text-xs text-faint">
-            {drafts.length} snippet{drafts.length === 1 ? "" : "s"}
+            {drafts.length} gem{drafts.length === 1 ? "" : "s"}
           </span>
           <div className="flex items-center gap-4">
             <button
@@ -140,14 +158,14 @@ export function SegmentationReview({
               disabled={saving}
               className="text-sm text-faint transition-colors hover:text-muted disabled:opacity-50"
             >
-              Not now
+              {none ? "Leave whole" : "Not now"}
             </button>
             <button
               onClick={save}
               disabled={saving}
               className="rounded-lg bg-foreground px-5 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save snippets"}
+              {saving ? "Saving…" : none ? "Done" : "Save gems"}
             </button>
           </div>
         </div>
