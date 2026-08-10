@@ -316,6 +316,20 @@ export async function writeProjectSnippet(
   return res.json();
 }
 
+/** Draw an EXISTING library gem into a project (shared reference, included).
+ * Used by Architect to pull in gems that weren't initially chosen. */
+export async function addProjectGem(
+  projectId: string,
+  snippetId: string,
+): Promise<void> {
+  const res = await fetch(`/api/projects/${projectId}/snippets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ snippetId }),
+  });
+  if (!res.ok) throw new Error("Failed to add gem to piece");
+}
+
 export async function reorderBlocks(
   projectId: string,
   orderedIds: string[],

@@ -31,7 +31,30 @@ export async function POST(
   } catch {
     body = {};
   }
-  const { content, blockId } = body as { content?: unknown; blockId?: unknown };
+  const { content, blockId, snippetId } = body as {
+    content?: unknown;
+    blockId?: unknown;
+    snippetId?: unknown;
+  };
+
+  // Attach an EXISTING library gem to this project (spec §8: draw on gems you
+  // didn't initially choose). Shared reference — never a copy; if it was
+  // benched here before, bring it back in.
+  if (typeof snippetId === "string" && snippetId.trim() !== "") {
+    const gem = await prisma.snippet.findFirst({
+      where: { id: snippetId, userId },
+    });
+    if (!gem) {
+      return NextResponse.json({ error: "gem not found" }, { status: 404 });
+    }
+    await prisma.projectSnippet.upsert({
+      where: { projectId_snippetId: { projectId, snippetId } },
+      update: { included: true },
+      create: { projectId, snippetId, included: true, relation: "unsure" },
+    });
+    return NextResponse.json({ id: snippetId }, { status: 201 });
+  }
+
   if (typeof content !== "string" || content.trim() === "") {
     return NextResponse.json({ error: "content is required" }, { status: 400 });
   }

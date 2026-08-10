@@ -1,9 +1,14 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { updateProjectSnippet, updateSnippet } from "@/lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import {
+  addProjectGem,
+  fetchSnippets,
+  updateProjectSnippet,
+  updateSnippet,
+} from "@/lib/api";
 import type { ProjectSnippetDTO } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { EditableSnippet } from "./EditableSnippet";
@@ -115,22 +120,106 @@ export function BankSidebar({
   snippets: ProjectSnippetDTO[];
   draggable?: boolean;
 }) {
+  const queryClient = useQueryClient();
   const included = snippets.filter((s) => s.included);
   const benched = snippets.filter((s) => !s.included);
+
+  // Benched snippets accordion away by default so they don't eat the sidebar.
+  const [showBenched, setShowBenched] = useState(false);
+  // The "draw on more gems" picker (Architect only).
+  const [adding, setAdding] = useState(false);
+  const [filter, setFilter] = useState("");
+
+  // The whole gem library, to draw in gems that weren't initially chosen.
+  const { data: library = [] } = useQuery({
+    queryKey: ["snippets"],
+    queryFn: fetchSnippets,
+    enabled: adding, // only fetch when the picker is opened
+  });
+  const inProject = useMemo(
+    () => new Set(snippets.map((s) => s.snippet.id)),
+    [snippets],
+  );
+  const candidates = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    return library.filter(
+      (s) =>
+        !s.archived &&
+        !inProject.has(s.id) &&
+        (q === "" ||
+          s.content.toLowerCase().includes(q) ||
+          (s.label ?? "").toLowerCase().includes(q)),
+    );
+  }, [library, inProject, filter]);
+
+  const add = useMutation({
+    mutationFn: (snippetId: string) => addProjectGem(projectId, snippetId),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["snippets"] });
+    },
+  });
 
   return (
     <aside className="w-full shrink-0 md:w-72">
       {/* The bank scrolls on its own — a long list of snippets stays reachable
           without scrolling the essay blocks. Header pinned; only the list moves. */}
       <div className="sticky top-10 flex max-h-[calc(100vh-5rem)] flex-col">
-        <h2 className="mb-3 shrink-0 text-[11px] uppercase tracking-wider text-faint">
-          Bank · {snippets.length}
+        <div className="mb-3 flex shrink-0 items-center justify-between gap-2">
+          <h2 className="text-[11px] uppercase tracking-wider text-faint">
+            Bank · {included.length}
+            {draggable && (
+              <span className="ml-2 normal-case tracking-normal text-faint">
+                (drag onto a block)
+              </span>
+            )}
+          </h2>
           {draggable && (
-            <span className="ml-2 normal-case tracking-normal text-faint">
-              (drag onto a block)
-            </span>
+            <Button
+              onClick={() => setAdding((v) => !v)}
+              className="!text-[11px]"
+            >
+              {adding ? "done" : "+ add gems"}
+            </Button>
           )}
-        </h2>
+        </div>
+
+        {/* Draw on gems not initially chosen (spec §8). */}
+        {adding && (
+          <div className="mb-3 shrink-0 rounded-md border border-border bg-background p-2">
+            <input
+              autoFocus
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Search your gems…"
+              className="mb-2 w-full rounded border border-border bg-surface px-2 py-1 text-xs text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            />
+            <ul className="flex max-h-56 flex-col gap-1 overflow-y-auto">
+              {candidates.length === 0 ? (
+                <li className="px-1 py-2 text-[11px] text-faint">
+                  {filter ? "No gems match." : "Every gem is already in this piece."}
+                </li>
+              ) : (
+                candidates.map((s) => (
+                  <li key={s.id}>
+                    <Button
+                      press={false}
+                      onClick={() => add.mutate(s.id)}
+                      disabled={add.isPending}
+                      className="w-full !justify-start gap-2 text-left"
+                    >
+                      <span className="text-accent">+</span>
+                      <span className="min-w-0 flex-1 truncate text-xs text-muted">
+                        {s.label || s.content}
+                      </span>
+                    </Button>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+        )}
+
         <div className="min-h-0 flex-1 overflow-y-auto pr-1">
           <ul className="flex flex-col gap-1.5">
             {included.map((ps) => (
@@ -143,23 +232,35 @@ export function BankSidebar({
               />
             ))}
           </ul>
+          {included.length === 0 && (
+            <p className="py-4 text-[11px] text-faint">
+              No gems in this piece yet.
+              {draggable ? " Add some above." : ""}
+            </p>
+          )}
 
           {benched.length > 0 && (
             <>
-              <h3 className="mb-2 mt-5 text-[11px] uppercase tracking-wider text-faint">
-                Benched · {benched.length}
-              </h3>
-              <ul className="flex flex-col gap-1.5">
-                {benched.map((ps) => (
-                  <BankItem
-                    key={ps.snippet.id}
-                    ps={ps}
-                    projectId={projectId}
-                    draggable={false}
-                    editable={false}
-                  />
-                ))}
-              </ul>
+              <Button
+                press={false}
+                onClick={() => setShowBenched((v) => !v)}
+                className="mb-2 mt-5 w-full !justify-start gap-1.5 !text-[11px] uppercase tracking-wider text-faint"
+              >
+                <span>{showBenched ? "▾" : "▸"}</span> Set aside · {benched.length}
+              </Button>
+              {showBenched && (
+                <ul className="flex flex-col gap-1.5">
+                  {benched.map((ps) => (
+                    <BankItem
+                      key={ps.snippet.id}
+                      ps={ps}
+                      projectId={projectId}
+                      draggable={false}
+                      editable={false}
+                    />
+                  ))}
+                </ul>
+              )}
             </>
           )}
         </div>

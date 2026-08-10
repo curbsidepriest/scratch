@@ -8,6 +8,10 @@ export interface SnippetDTO {
   createdAt: string;
   sourceMode: string;
   wordCount: number;
+  /** Referenced by at least one project as an included snippet. */
+  used?: boolean;
+  /** Titles of the pieces this gem is used in. */
+  usedIn?: string[];
 }
 
 /** A raw writing session, with its extracted snippets nested under it. */

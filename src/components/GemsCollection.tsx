@@ -27,6 +27,7 @@ export function GemsCollection() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
+  const [showUsed, setShowUsed] = useState(false);
   const [promoting, setPromoting] = useState<{
     throughlineId: string;
     phrase: string;
@@ -59,14 +60,22 @@ export function GemsCollection() {
     onSettled: invalidate,
   });
 
-  const active = useMemo(
-    () => snippets.filter((s) => !s.archived),
+  // Fresh gems stay front-and-center; ones already used in a piece get tucked
+  // into an accordion so the library reads as "what's still waiting to be used",
+  // not an ever-growing pile (spec §3 — reduce overwhelm, encourage usage).
+  const fresh = useMemo(
+    () => snippets.filter((s) => !s.archived && !s.used),
+    [snippets],
+  );
+  const used = useMemo(
+    () => snippets.filter((s) => !s.archived && s.used),
     [snippets],
   );
   const archived = useMemo(
     () => snippets.filter((s) => s.archived),
     [snippets],
   );
+  const active = fresh.length + used.length;
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
@@ -86,7 +95,7 @@ export function GemsCollection() {
 
       {isLoading ? (
         <p className="py-16 text-center text-sm text-faint">Loading…</p>
-      ) : active.length === 0 ? (
+      ) : active === 0 ? (
         <div className="rounded-xl border border-dashed border-border py-16 text-center">
           <p className="text-sm text-muted">No gems yet.</p>
           <p className="mt-1 text-sm text-faint">
@@ -99,7 +108,7 @@ export function GemsCollection() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {active.map((s, i) => (
+          {fresh.map((s, i) => (
             <Gem
               key={s.id}
               snippet={s}
@@ -110,6 +119,39 @@ export function GemsCollection() {
               starting={seed.isPending && seed.variables === s.id}
             />
           ))}
+          {fresh.length === 0 && (
+            <p className="rounded-xl border border-dashed border-border py-10 text-center text-sm text-faint">
+              Every gem is in a piece. Nice. Write more, or reuse one below.
+            </p>
+          )}
+        </div>
+      )}
+
+      {used.length > 0 && (
+        <div className="mt-10">
+          <Button
+            press={false}
+            onClick={() => setShowUsed((v) => !v)}
+            className="!text-[11px] uppercase tracking-wider text-faint"
+          >
+            <span className="mr-1">{showUsed ? "▾" : "▸"}</span>
+            Used · {used.length}
+          </Button>
+          {showUsed && (
+            <div className="mt-4 flex flex-col gap-3">
+              {used.map((s, i) => (
+                <Gem
+                  key={s.id}
+                  snippet={s}
+                  index={i}
+                  onEdit={(content) => edit.mutateAsync({ id: s.id, content })}
+                  onArchive={() => archive.mutate({ id: s.id, archived: true })}
+                  onStartPiece={() => seed.mutate(s.id)}
+                  starting={seed.isPending && seed.variables === s.id}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -188,14 +230,26 @@ function Gem({
       className="group rounded-lg border border-border bg-surface p-4"
     >
       <div className="mb-1 flex items-center justify-between gap-2">
-        {snippet.label ? (
-          <span className="text-[11px] uppercase tracking-wider text-faint">
-            {snippet.label}
-          </span>
-        ) : (
-          <span />
-        )}
-        <div className="flex items-center gap-3 text-[11px] text-faint">
+        <div className="flex min-w-0 items-center gap-2">
+          {snippet.used && (
+            <span
+              title={
+                snippet.usedIn && snippet.usedIn.length > 0
+                  ? `Used in ${snippet.usedIn.join(", ")}`
+                  : "Used in a piece"
+              }
+              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent"
+            >
+              ✓ used
+            </span>
+          )}
+          {snippet.label && (
+            <span className="min-w-0 truncate text-[11px] uppercase tracking-wider text-faint">
+              {snippet.label}
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-3 text-[11px] text-faint">
           <span>{relativeTime(snippet.createdAt)}</span>
           <Button
             onClick={onArchive}
