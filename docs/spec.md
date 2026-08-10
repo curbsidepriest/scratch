@@ -197,6 +197,13 @@ Implement `RankerService` behind an interface. The stub:
 
 ## 6. Promotion → Project (the second must-feel-great moment)
 
+A through-line can arrive three ways, all landing in the same promotion flow: a
+**Ranker spark** (§5), a **blank-slate phrase** the writer types, or a
+**gem-seeded** start — the writer picks one gem from the library and the Ranker
+derives the territory from it, anchoring the new through-line's evidence on that
+gem so the pull-in gathers the gems that belong with it. The gem-seeded path is a
+deliberate, writer-initiated way to turn a single good line into a piece.
+
 When a through-line is adopted:
 1. Create a **Project** carrying the through-line phrase.
 2. **Pull in relevant snippets** from the Scratchpad. In v1 the relevance ranking

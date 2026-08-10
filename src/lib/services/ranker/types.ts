@@ -43,6 +43,16 @@ export interface RankerService {
   evaluate(snippets: RankerSnippet[]): Promise<RankerCandidate | null>;
 
   /**
+   * Grow a candidate through-line from ONE seed snippet the writer deliberately
+   * picked as the starting point of a piece (spec §6, gem-seeded path). Unlike
+   * `evaluate`, this ALWAYS returns a candidate — the writer has already chosen
+   * to start here; the job is only to name the territory that gem opens. The
+   * seed is always among the evidence, so the promotion pull-in anchors on it
+   * and gathers the other gems that belong with it.
+   */
+  seedFrom(seed: RankerSnippet): Promise<RankerCandidate>;
+
+  /**
    * Given the snippets a through-line was anchored to, judge which of the
    * remaining snippets relate to it — the stubbed relevance ranking that seeds
    * the promotion pull-in. The user always curates the final set.

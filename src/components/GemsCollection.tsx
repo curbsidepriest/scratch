@@ -1,13 +1,20 @@
 "use client";
 
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { SnippetDTO } from "@/lib/types";
-import { fetchSnippets, setSnippetArchived, updateSnippet } from "@/lib/api";
+import {
+  fetchSnippets,
+  setSnippetArchived,
+  startPieceFromGem,
+  updateSnippet,
+} from "@/lib/api";
 import { relativeTime } from "@/lib/time";
 import { EditableSnippet } from "./EditableSnippet";
+import { PromotionOverlay } from "./PromotionOverlay";
 
 /**
  * The gem library (spec §3) — every snippet extracted from every session, flat
@@ -17,11 +24,22 @@ import { EditableSnippet } from "./EditableSnippet";
  */
 export function GemsCollection() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
+  const [promoting, setPromoting] = useState<{
+    throughlineId: string;
+    phrase: string;
+  } | null>(null);
 
   const { data: snippets = [], isLoading } = useQuery({
     queryKey: ["snippets"],
     queryFn: fetchSnippets,
+  });
+
+  // Seed a piece from one gem, then hand off to the promotion pull-in.
+  const seed = useMutation({
+    mutationFn: (snippetId: string) => startPieceFromGem(snippetId),
+    onSuccess: ({ id, phrase }) => setPromoting({ throughlineId: id, phrase }),
   });
 
   const invalidate = () => {
@@ -87,6 +105,8 @@ export function GemsCollection() {
               index={i}
               onEdit={(content) => edit.mutateAsync({ id: s.id, content })}
               onArchive={() => archive.mutate({ id: s.id, archived: true })}
+              onStartPiece={() => seed.mutate(s.id)}
+              starting={seed.isPending && seed.variables === s.id}
             />
           ))}
         </div>
@@ -129,6 +149,17 @@ export function GemsCollection() {
           )}
         </div>
       )}
+
+      <AnimatePresence>
+        {promoting && (
+          <PromotionOverlay
+            throughlineId={promoting.throughlineId}
+            phrase={promoting.phrase}
+            onCancel={() => setPromoting(null)}
+            onPromoted={(projectId) => router.push(`/project/${projectId}`)}
+          />
+        )}
+      </AnimatePresence>
     </main>
   );
 }
@@ -138,11 +169,15 @@ function Gem({
   index,
   onEdit,
   onArchive,
+  onStartPiece,
+  starting,
 }: {
   snippet: SnippetDTO;
   index: number;
   onEdit: (content: string) => Promise<void> | void;
   onArchive: () => void;
+  onStartPiece: () => void;
+  starting: boolean;
 }) {
   return (
     <motion.article
@@ -174,6 +209,15 @@ function Gem({
         onSave={onEdit}
         textClassName="text-[15px] leading-relaxed text-foreground"
       />
+      <div className="mt-3 flex justify-end">
+        <button
+          onClick={onStartPiece}
+          disabled={starting}
+          className="rounded-full border border-border px-3 py-1 text-[11px] text-muted opacity-0 transition-all hover:border-accent hover:text-foreground disabled:opacity-50 group-hover:opacity-100"
+        >
+          {starting ? "Starting…" : "Start a piece from this →"}
+        </button>
+      </div>
     </motion.article>
   );
 }

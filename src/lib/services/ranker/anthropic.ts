@@ -65,6 +65,28 @@ const RELEVANCE_SCHEMA = {
   },
 } as const;
 
+// seedFrom always returns a candidate (non-null), unlike evaluate.
+const SEED_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["phrase", "evidence"],
+  properties: {
+    phrase: { type: "string" },
+    evidence: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["snippetId", "observation"],
+        properties: {
+          snippetId: { type: "string" },
+          observation: { type: "string" },
+        },
+      },
+    },
+  },
+} as const;
+
 function renderSnippets(snippets: RankerSnippet[]): string {
   return snippets
     .map((s) => `[${s.id}] (${s.sourceMode}) ${s.content}`)
@@ -96,6 +118,35 @@ export class AnthropicRankerService implements RankerService {
     if (candidate) {
       const ids = new Set(snippets.map((s) => s.id));
       candidate.evidence = candidate.evidence.filter((e) => ids.has(e.snippetId));
+    }
+    return candidate;
+  }
+
+  async seedFrom(seed: RankerSnippet): Promise<RankerCandidate> {
+    const candidate = await structured<RankerCandidate>({
+      system: SYSTEM_PROMPT,
+      user:
+        "The writer has chosen ONE line as the seed of a new piece. Your job is " +
+        "not to judge whether it's worth writing — they've decided that — but to " +
+        "name the territory it opens, so a piece can grow around it.\n\n" +
+        "Return JSON { \"phrase\": ..., \"evidence\": [...] }:\n" +
+        "- phrase: name the territory plainly and concretely, as in your " +
+        "instructions — the question or tension this line opens up. Never a title.\n" +
+        "- evidence: exactly one item citing the seed's [id] below, with a short " +
+        "grounded note on what it opens.\n\n" +
+        renderSnippets([seed]),
+      schema: SEED_SCHEMA as unknown as Record<string, unknown>,
+      maxTokens: 2000,
+      think: true,
+    });
+    // The seed must always anchor the piece, whatever the model returned.
+    const hasSeed = candidate.evidence?.some((e) => e.snippetId === seed.id);
+    if (!hasSeed) {
+      candidate.evidence = [
+        { snippetId: seed.id, observation: "the gem you're building this piece around" },
+      ];
+    } else {
+      candidate.evidence = candidate.evidence.filter((e) => e.snippetId === seed.id);
     }
     return candidate;
   }

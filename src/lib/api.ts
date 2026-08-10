@@ -150,6 +150,21 @@ export async function createThroughline(
   return res.json();
 }
 
+// Start a piece seeded by ONE gem (spec §6). The Ranker derives the territory
+// and anchors the new through-line on that gem; the caller then hands off to the
+// promotion pull-in to gather the gems that belong with it.
+export async function startPieceFromGem(
+  snippetId: string,
+): Promise<{ id: string; phrase: string }> {
+  const res = await fetch("/api/throughlines", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seedSnippetId: snippetId }),
+  });
+  if (!res.ok) throw new Error("Failed to start a piece from this gem");
+  return res.json();
+}
+
 export async function fetchRelevant(
   throughlineId: string,
 ): Promise<RelevantResponse> {

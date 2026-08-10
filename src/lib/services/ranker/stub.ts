@@ -76,6 +76,31 @@ export class StubRankerService implements RankerService {
   // mundane notes (lists, weather, meeting notes) do not.
   private readonly SURFACE_THRESHOLD = 6;
 
+  // Seed a piece from ONE gem the writer chose (spec §6). Names territory from
+  // the seed's own salient language and anchors the evidence on the seed, so the
+  // promotion pull-in gathers the gems that share that language. Deterministic
+  // stand-in for the real model's read.
+  async seedFrom(seed: RankerSnippet): Promise<RankerCandidate> {
+    const terms = [...new Set(tokens(seed.content))].filter(
+      (t) => !PLATITUDES.has(t),
+    );
+    const [a, b] = terms;
+    let phrase: string;
+    if (a && b) {
+      phrase = `You're starting from ${a}, and there's something in how it meets ${b} — follow that.`;
+    } else if (a) {
+      phrase = `You're starting from ${a}. See where it wants to go.`;
+    } else {
+      phrase = "You're starting from this line. See what it opens up.";
+    }
+    return {
+      phrase,
+      evidence: [
+        { snippetId: seed.id, observation: "the gem you're building this piece around" },
+      ],
+    };
+  }
+
   async evaluate(snippets: RankerSnippet[]): Promise<RankerCandidate | null> {
     if (snippets.length < 3) return null;
 
