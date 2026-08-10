@@ -23,9 +23,14 @@ export type ButtonSize = "sm" | "md";
 const BASE =
   "inline-flex items-center justify-center gap-1.5 rounded-md font-medium " +
   "transition-[background-color,color,border-color,transform,opacity] duration-150 " +
-  "select-none cursor-pointer active:scale-[0.96] " +
+  "select-none cursor-pointer " +
   "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent " +
-  "disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100";
+  "disabled:pointer-events-none disabled:opacity-50";
+
+// The press-scale feedback. Great on real buttons; but on a Button that fills a
+// bordered card (an expand/edit toggle), scaling the fill inside the card border
+// reads as a buggy "box shrinking inside a box", so those opt out via press={false}.
+const PRESS = "active:scale-[0.96] disabled:active:scale-100";
 
 const VARIANTS: Record<ButtonVariant, string> = {
   ghost:
@@ -83,6 +88,8 @@ export interface ButtonProps
   size?: ButtonSize;
   /** Show a spinner and disable while a slow action runs. */
   pending?: boolean;
+  /** Press-scale feedback on click. Off for card-shaped expand/edit toggles. */
+  press?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -91,6 +98,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "ghost",
       size = "sm",
       pending = false,
+      press = true,
       disabled,
       type = "button",
       className = "",
@@ -105,7 +113,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type={type}
         disabled={disabled || pending}
         aria-busy={pending || undefined}
-        className={`${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${RADIUS[variant] ?? ""} ${pending ? "cursor-wait" : ""} ${className}`}
+        className={`${BASE} ${press ? PRESS : ""} ${VARIANTS[variant]} ${SIZES[size]} ${RADIUS[variant] ?? ""} ${pending ? "cursor-wait" : ""} ${className}`}
         {...rest}
       >
         {pending && <Spinner />}

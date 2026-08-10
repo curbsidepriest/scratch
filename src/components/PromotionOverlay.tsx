@@ -109,6 +109,7 @@ export function PromotionOverlay({
               <Button
                 key={s.id}
                 variant="ghost"
+                press={false}
                 onClick={() => toggle(s.id)}
                 className={`!rounded-lg border !px-4 !py-3 text-left ${
                   on ? "border-accent/40 bg-background" : "border-border bg-transparent opacity-60"

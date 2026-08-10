@@ -68,11 +68,14 @@ export function EditableSnippet({
 
   return (
     <div className="group relative">
-      <p className={`whitespace-pre-wrap ${textClassName}`}>{content}</p>
+      {/* pr reserves room so the top-right "edit" affordance never overprints
+          the first line of copy. */}
+      <p className={`whitespace-pre-wrap pr-12 ${textClassName}`}>{content}</p>
       <Button
         onClick={() => setEditing(true)}
         aria-label="Edit snippet"
-        className="absolute right-0 top-0 bg-surface text-[11px] text-faint opacity-0 group-hover:opacity-100"
+        press={false}
+        className="absolute right-0 top-0 bg-surface/90 text-[11px] text-faint opacity-0 backdrop-blur-sm group-hover:opacity-100"
       >
         edit
       </Button>

@@ -199,6 +199,7 @@ export function EditorMode({
               <li key={ps.snippet.id}>
                 <Button
                   variant="subtle"
+                  press={false}
                   onClick={() => insertSnippet(ps.snippet.content)}
                   className="w-full !rounded-md !justify-start !px-3 !py-2 text-left hover:!border-accent/50"
                 >

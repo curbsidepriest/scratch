@@ -77,7 +77,7 @@ export function EditableTitle({
         setEditing(true);
       }}
       title="Rename"
-      className={`-mx-1.5 max-w-full truncate rounded-md px-1.5 py-0.5 text-left transition-colors duration-150 hover:bg-foreground/[0.06] active:scale-[0.99] ${value ? "text-foreground" : "text-faint"} ${className}`}
+      className={`-mx-1.5 max-w-full truncate rounded-md px-1.5 py-0.5 text-left transition-colors duration-150 hover:bg-foreground/[0.06] ${value ? "text-foreground" : "text-faint"} ${className}`}
     >
       {value || placeholder}
     </button>

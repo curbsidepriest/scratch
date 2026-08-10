@@ -114,6 +114,7 @@ function SparkCard({
     <article className="overflow-hidden rounded-xl border border-border bg-surface">
       <Button
         onClick={() => setExpanded((v) => !v)}
+        press={false}
         className="flex w-full justify-start gap-3 border-l-2 border-accent !rounded-none !px-5 !py-4 text-left"
       >
         <span className="text-faint">{expanded ? "▾" : "▸"}</span>
