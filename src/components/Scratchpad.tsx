@@ -17,6 +17,7 @@ import {
   fetchSuggestion,
 } from "@/lib/api";
 import type { SegmentSuggestion } from "@/lib/types";
+import { AnvilWidget } from "./AnvilWidget";
 import { Composer } from "./Composer";
 import { Wordmark } from "./Wordmark";
 import { ScratchList } from "./ScratchList";
@@ -204,6 +205,8 @@ export function Scratchpad() {
       <section className="mb-10">
         <Composer onCapture={(content) => capture.mutate(content)} />
       </section>
+
+      <AnvilWidget />
 
       {startingPiece && (
         <div className="mb-10 rounded-lg border border-border bg-surface p-4">

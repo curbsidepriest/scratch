@@ -367,6 +367,31 @@ export async function saveProjectTitle(
   if (!res.ok) throw new Error("Failed to save title");
 }
 
+// Put a piece on the anvil (finish-by date) or take it off (dueAt = null).
+export async function setProjectDue(
+  projectId: string,
+  dueAt: string | null,
+): Promise<void> {
+  const res = await fetch(`/api/projects/${projectId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dueAt }),
+  });
+  if (!res.ok) throw new Error("Failed to set finish-by date");
+}
+
+// Ship it — mark the piece finished (moves to the Finished shelf).
+export async function finishProject(projectId: string): Promise<void> {
+  const res = await fetch(`/api/projects/${projectId}/finish`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to finish piece");
+}
+
+// Let it go — dissolve the piece graciously (through-line + gems return).
+export async function releaseProject(projectId: string): Promise<void> {
+  const res = await fetch(`/api/projects/${projectId}/release`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to release piece");
+}
+
 export async function composeDraft(
   projectId: string,
 ): Promise<{ draft: string }> {

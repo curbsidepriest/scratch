@@ -21,10 +21,20 @@ export async function PATCH(
   } catch {
     body = {};
   }
-  const { draft, title } = body as { draft?: unknown; title?: unknown };
-  const data: { draft?: string; title?: string } = {};
+  const { draft, title, dueAt } = body as {
+    draft?: unknown;
+    title?: unknown;
+    dueAt?: unknown;
+  };
+  const data: { draft?: string; title?: string; dueAt?: Date | null } = {};
   if (typeof draft === "string") data.draft = draft;
   if (typeof title === "string") data.title = title;
+  // Put on / take off the anvil. null clears the finish-by date; a string sets it.
+  if (dueAt === null) data.dueAt = null;
+  else if (typeof dueAt === "string") {
+    const d = new Date(dueAt);
+    if (!Number.isNaN(d.getTime())) data.dueAt = d;
+  }
 
   await prisma.project.update({ where: { id }, data });
   return NextResponse.json({ ok: true });

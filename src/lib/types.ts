@@ -85,6 +85,9 @@ export interface ProjectSummaryDTO {
   title: string | null;
   snippetCount: number;
   draftWords: number;
+  dueAt: string | null;
+  status: string; // active | finished | released
+  finishedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

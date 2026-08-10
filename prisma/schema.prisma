@@ -94,12 +94,17 @@ model Evidence {
 /// A piece being developed. A lens onto the shared snippet substrate.
 model Project {
   id            String   @id @default(cuid())
-  userId        String   @map("user_id") // owning Clerk user
-  throughlineId String   @unique @map("throughline_id")
+  userId        String    @map("user_id") // owning Clerk user
+  throughlineId String    @unique @map("throughline_id")
   title         String? // user-set, optional, deferred
-  draft         String   @default("") // Editor working text (spec §8c)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+  draft         String    @default("") // Editor working text (spec §8c)
+  // "On the anvil" — a finish-by commitment (strike while the iron's hot). When
+  // dueAt passes the piece goes cold; after a short grace it auto-releases.
+  dueAt         DateTime? @map("due_at")
+  status        String    @default("active") // active | finished | released
+  finishedAt    DateTime? @map("finished_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
 
   throughline     Throughline      @relation(fields: [throughlineId], references: [id])
   projectSnippets ProjectSnippet[]
