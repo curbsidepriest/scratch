@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import type { DayCell, StreakInfo } from "@/lib/streak";
+import { Button } from "@/components/ui/Button";
 
 function WeekStrip({ week }: { week: DayCell[] }) {
   return (
@@ -106,12 +107,13 @@ export function StreakBanner({
             >
               Write for 5 minutes →
             </motion.button>
-            <button
+            <Button
               onClick={hideForToday}
-              className="text-[11px] text-faint transition-colors hover:text-muted"
+              variant="ghost"
+              className="!text-[11px]"
             >
               hide for today
-            </button>
+            </Button>
           </div>
         </div>
       </motion.section>
@@ -132,12 +134,14 @@ export function StreakBanner({
           </div>
           <WeekStrip week={week} />
         </div>
-        <button
+        <Button
           onClick={onStart}
-          className="shrink-0 rounded-full border border-border px-4 py-2 text-xs text-muted transition-colors hover:text-foreground"
+          variant="subtle"
+          size="sm"
+          className="shrink-0"
         >
           Write again
-        </button>
+        </Button>
       </div>
     </section>
   );

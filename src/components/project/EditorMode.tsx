@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { composeDraft, runLint, saveDraft, setLintFlagStatus } from "@/lib/api";
 import type { LintFlagDTO, ProjectSnippetDTO } from "@/lib/types";
+import { Button } from "../ui/Button";
 
 export function EditorMode({
   projectId,
@@ -108,32 +109,24 @@ export function EditorMode({
           <h2 className="mr-auto text-[11px] uppercase tracking-wider text-faint">
             The sentences
           </h2>
-          <button
+          <Button
             onClick={onComposeClick}
-            disabled={composing}
-            className="text-xs text-muted transition-colors hover:text-foreground disabled:opacity-50"
+            pending={composing}
           >
             {composing ? "composing…" : "Compose from Architect"}
-          </button>
-          <button
-            onClick={() => void check()}
-            className="text-xs text-muted transition-colors hover:text-foreground"
-          >
+          </Button>
+          <Button onClick={() => void check()}>
             {checking ? "checking…" : "Re-check"}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setShowSnippets((v) => !v)}
-            className={`text-xs transition-colors hover:text-foreground ${
-              showSnippets ? "text-foreground" : "text-muted"
-            }`}
+            className={showSnippets ? "!text-foreground" : ""}
           >
             Snippets
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setShowFlags((v) => !v)}
-            className={`flex items-center gap-1.5 text-xs transition-colors hover:text-foreground ${
-              showFlags ? "text-foreground" : "text-muted"
-            }`}
+            className={showFlags ? "!text-foreground" : ""}
           >
             Flags
             {flags.length > 0 && (
@@ -141,7 +134,7 @@ export function EditorMode({
                 {flags.length}
               </span>
             )}
-          </button>
+          </Button>
         </div>
 
         {confirmingCompose && (
@@ -154,18 +147,10 @@ export function EditorMode({
               overwritten.
             </p>
             <div className="mt-3 flex items-center gap-4 text-xs">
-              <button
-                onClick={() => void compose()}
-                className="rounded-md bg-foreground px-3 py-1.5 font-medium text-background hover:opacity-90"
-              >
+              <Button variant="solid" onClick={() => void compose()}>
                 Replace draft
-              </button>
-              <button
-                onClick={() => setConfirmingCompose(false)}
-                className="text-faint hover:text-muted"
-              >
-                Cancel
-              </button>
+              </Button>
+              <Button onClick={() => setConfirmingCompose(false)}>Cancel</Button>
             </div>
           </div>
         )}
@@ -173,12 +158,12 @@ export function EditorMode({
         {draft.trim() === "" && !confirmingCompose && (
           <div className="mb-3 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-faint">
             Nothing composed yet.{" "}
-            <button
+            <Button
               onClick={onComposeClick}
-              className="underline decoration-dotted hover:text-foreground"
+              className="!px-0 !py-0 underline decoration-dotted"
             >
               Compose from Architect
-            </button>{" "}
+            </Button>{" "}
             to release your arranged snippets into a draft, or just start typing.
           </div>
         )}
@@ -201,20 +186,21 @@ export function EditorMode({
             <h3 className="text-[11px] uppercase tracking-wider text-faint">
               Snippets
             </h3>
-            <button
+            <Button
               onClick={() => setShowSnippets(false)}
-              className="text-[11px] text-faint hover:text-muted"
+              className="!text-[11px]"
             >
               close
-            </button>
+            </Button>
           </div>
           <p className="mb-3 text-xs text-faint">Click to drop into the draft.</p>
           <ul className="flex flex-col gap-2">
             {snippets.map((ps) => (
               <li key={ps.snippet.id}>
-                <button
+                <Button
+                  variant="subtle"
                   onClick={() => insertSnippet(ps.snippet.content)}
-                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-left transition-colors hover:border-accent/50"
+                  className="w-full !rounded-md !justify-start !px-3 !py-2 text-left hover:!border-accent/50"
                 >
                   {ps.snippet.label && (
                     <span className="mb-1 block text-[10px] uppercase tracking-wider text-faint">
@@ -224,7 +210,7 @@ export function EditorMode({
                   <span className="line-clamp-3 text-xs leading-snug text-muted">
                     {ps.snippet.content}
                   </span>
-                </button>
+                </Button>
               </li>
             ))}
             {snippets.length === 0 && (
@@ -240,12 +226,12 @@ export function EditorMode({
             <h3 className="text-[11px] uppercase tracking-wider text-faint">
               Flags {flags.length > 0 && `· ${flags.length}`}
             </h3>
-            <button
+            <Button
               onClick={() => setShowFlags(false)}
-              className="text-[11px] text-faint hover:text-muted"
+              className="!text-[11px]"
             >
               close
-            </button>
+            </Button>
           </div>
           {flags.length === 0 ? (
             <p className="text-sm text-faint">
@@ -264,18 +250,12 @@ export function EditorMode({
                     {f.quote.length > 100 ? `${f.quote.slice(0, 100)}…` : f.quote}
                   </p>
                   <div className="mt-3 flex items-center gap-4 text-xs">
-                    <button
-                      onClick={() => fixMyself(f.quote)}
-                      className="text-muted transition-colors hover:text-foreground"
-                    >
+                    <Button onClick={() => fixMyself(f.quote)}>
                       Fix it myself
-                    </button>
-                    <button
-                      onClick={() => acknowledge(f.id)}
-                      className="text-faint transition-colors hover:text-muted"
-                    >
+                    </Button>
+                    <Button onClick={() => acknowledge(f.id)}>
                       Acknowledge &amp; dismiss
-                    </button>
+                    </Button>
                   </div>
                 </li>
               ))}

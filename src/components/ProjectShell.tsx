@@ -23,9 +23,11 @@ import {
   removeBlockSnippet,
   reorderBlockSnippets,
   reorderBlocks,
+  saveProjectTitle,
 } from "@/lib/api";
 import type { BlockDTO, ProjectDTO } from "@/lib/types";
 import { BankSidebar } from "./BankSidebar";
+import { EditableTitle } from "./EditableTitle";
 import { EditablePhrase } from "./project/EditablePhrase";
 import { ModeTabs, type Mode } from "./project/ModeTabs";
 import { ArchitectMode } from "./project/ArchitectMode";
@@ -38,6 +40,14 @@ export function ProjectShell({ id }: { id: string }) {
   const { data: project, isLoading, isError } = useQuery({
     queryKey: ["project", id],
     queryFn: () => fetchProject(id),
+  });
+
+  const rename = useMutation({
+    mutationFn: (title: string) => saveProjectTitle(id, title),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["project", id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
   });
 
   const { data: blocks = [], isPending: blocksLoading } = useQuery({
@@ -280,8 +290,16 @@ export function ProjectShell({ id }: { id: string }) {
             Pieces
           </Link>
         </div>
-        <div className="mt-4 text-[11px] uppercase tracking-wider text-faint">
-          The piece
+        <div className="mt-4">
+          <EditableTitle
+            value={project.title}
+            placeholder="Untitled piece"
+            onSave={(title) => rename.mutateAsync(title)}
+            className="text-2xl font-medium leading-tight"
+          />
+        </div>
+        <div className="mt-2 text-[11px] uppercase tracking-wider text-faint">
+          Through-line
         </div>
         <div className="mt-1">
           <EditablePhrase

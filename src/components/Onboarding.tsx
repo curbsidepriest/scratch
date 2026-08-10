@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { AnimatePresence, motion } from "motion/react";
+import { Button } from "@/components/ui/Button";
 import { Wordmark } from "./Wordmark";
 
 // A one-time welcome for a freshly signed-in user. Kept simple: a per-user flag
@@ -113,12 +114,14 @@ export function Onboarding() {
               ))}
             </ol>
 
-            <button
+            <Button
               onClick={dismiss}
-              className="mt-7 w-full rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-background transition-transform hover:-translate-y-0.5"
+              variant="solid"
+              size="md"
+              className="mt-7 w-full"
             >
               Start writing
-            </button>
+            </Button>
           </motion.div>
         </motion.div>
       )}

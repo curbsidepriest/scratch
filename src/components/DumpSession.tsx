@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createScratch, evaluateSpark } from "@/lib/api";
 import { wordCount } from "@/lib/domain";
 import type { SegmentSuggestion } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
 import { SegmentationReview } from "./SegmentationReview";
 
 const DURATIONS = [5, 10, 20, 30] as const;
@@ -115,17 +116,17 @@ function Segmented<T extends string | number>({
   return (
     <div className="inline-flex overflow-hidden rounded-lg border border-border">
       {options.map((o) => (
-        <button
+        <Button
           key={String(o)}
           onClick={() => onChange(o)}
-          className={`px-5 py-2 text-sm transition-colors ${
+          className={`!rounded-none px-5 py-2 text-sm ${
             value === o
-              ? "bg-foreground text-background"
-              : "bg-surface text-muted hover:text-foreground"
+              ? "!bg-foreground !text-background"
+              : "bg-surface"
           }`}
         >
           {render(o)}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -153,32 +154,32 @@ function ValuePicker({
         {presets.map((p) => {
           const on = !custom && value === p;
           return (
-            <button
+            <Button
               key={p}
               onClick={() => {
                 setCustom(false);
                 onChange(p);
               }}
-              className={`px-5 py-2 text-sm transition-colors ${
+              className={`!rounded-none px-5 py-2 text-sm ${
                 on
-                  ? "bg-foreground text-background"
-                  : "bg-surface text-muted hover:text-foreground"
+                  ? "!bg-foreground !text-background"
+                  : "bg-surface"
               }`}
             >
               {p} {unit}
-            </button>
+            </Button>
           );
         })}
-        <button
+        <Button
           onClick={() => setCustom(true)}
-          className={`px-5 py-2 text-sm transition-colors ${
+          className={`!rounded-none px-5 py-2 text-sm ${
             custom
-              ? "bg-foreground text-background"
-              : "bg-surface text-muted hover:text-foreground"
+              ? "!bg-foreground !text-background"
+              : "bg-surface"
           }`}
         >
           Custom
-        </button>
+        </Button>
       </div>
 
       {custom && (
@@ -268,9 +269,9 @@ function Setup({
         )}
       </div>
 
-      <button
+      <Button
         onClick={() => setNoBackspace(!noBackspace)}
-        className="mt-6 flex items-center gap-2.5 text-left"
+        className="mt-6 flex justify-start gap-2.5 !px-0 text-left"
       >
         <span
           className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
@@ -285,21 +286,15 @@ function Setup({
         <span className="text-sm text-muted">
           No backspace <span className="text-faint">(forward only — just keep going)</span>
         </span>
-      </button>
+      </Button>
 
       <div className="mt-10 flex items-center gap-4">
-        <button
-          onClick={onBegin}
-          className="rounded-lg bg-foreground px-6 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
-        >
+        <Button onClick={onBegin} variant="solid" size="md">
           Begin
-        </button>
-        <button
-          onClick={onCancel}
-          className="text-sm text-faint transition-colors hover:text-muted"
-        >
+        </Button>
+        <Button onClick={onCancel} variant="ghost" size="md">
           Back to Scratchpad
-        </button>
+        </Button>
       </div>
     </main>
   );
@@ -397,29 +392,23 @@ function Running({
         {confirmingQuit ? (
           <div className="flex items-center gap-3 text-sm">
             <span className="text-muted">Quit and lose this?</span>
-            <button
-              onClick={onQuit}
-              className="font-medium text-rose-600 transition-colors hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300"
-            >
+            <Button onClick={onQuit} variant="danger">
               Quit
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 setConfirmingQuit(false);
                 textRef.current?.focus();
               }}
-              className="text-faint transition-colors hover:text-muted"
+              variant="ghost"
             >
               keep writing
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
-            onClick={quit}
-            className="text-sm text-faint transition-colors hover:text-foreground"
-          >
+          <Button onClick={quit} variant="ghost" size="md">
             ← Quit
-          </button>
+          </Button>
         )}
       </div>
 
@@ -461,12 +450,9 @@ function Running({
               : " "
             : formatClock(elapsed)}
         </span>
-        <button
-          onClick={finish}
-          className="text-faint transition-colors hover:text-muted"
-        >
+        <Button onClick={finish} variant="ghost">
           finish &amp; save
-        </button>
+        </Button>
       </div>
     </main>
   );

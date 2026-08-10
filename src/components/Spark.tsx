@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import type { SparkDTO } from "@/lib/types";
+import { Button } from "./ui/Button";
 
 function excerpt(text: string, max = 90): string {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -56,19 +57,12 @@ export function Spark({
         </ul>
 
         <div className="mt-5 flex items-center gap-4">
-          <button
-            onClick={onDevelop}
-            className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
-          >
+          <Button variant="solid" size="md" onClick={onDevelop}>
             Develop this →
-          </button>
-          <button
-            onClick={onDismiss}
-            disabled={dismissing}
-            className="text-xs text-faint transition-colors hover:text-muted disabled:opacity-50"
-          >
+          </Button>
+          <Button onClick={onDismiss} disabled={dismissing}>
             Not now
-          </button>
+          </Button>
         </div>
       </div>
     </motion.aside>

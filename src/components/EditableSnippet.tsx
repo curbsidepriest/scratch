@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Button } from "./ui/Button";
 
 /**
  * Inline snippet editor. Snippets are the user's own words and are editable
@@ -68,13 +69,13 @@ export function EditableSnippet({
   return (
     <div className="group relative">
       <p className={`whitespace-pre-wrap ${textClassName}`}>{content}</p>
-      <button
+      <Button
         onClick={() => setEditing(true)}
-        className="absolute right-0 top-0 rounded bg-surface px-1.5 py-0.5 text-[11px] text-faint opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
         aria-label="Edit snippet"
+        className="absolute right-0 top-0 bg-surface text-[11px] text-faint opacity-0 group-hover:opacity-100"
       >
         edit
-      </button>
+      </Button>
     </div>
   );
 }

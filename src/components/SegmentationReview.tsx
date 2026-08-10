@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { useState } from "react";
 import { commitSnippets } from "@/lib/api";
+import { Button } from "@/components/ui/Button";
 import type { SegmentSuggestion } from "@/lib/types";
 
 interface Draft {
@@ -114,9 +115,9 @@ export function SegmentationReview({
                 className="w-full resize-none bg-transparent text-[14px] leading-relaxed text-foreground focus:outline-none"
               />
               <div className="mt-1 flex items-center gap-3 text-[11px] text-faint">
-                <button onClick={() => remove(i)} className="hover:text-muted">
+                <Button onClick={() => remove(i)} className="!text-[11px]">
                   drop
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -129,16 +130,16 @@ export function SegmentationReview({
         </div>
 
         <div className="mt-3 flex items-center gap-4 text-[11px] text-faint">
-          <button onClick={addGem} className="hover:text-foreground">
+          <Button onClick={addGem} className="!text-[11px]">
             + add a gem
-          </button>
+          </Button>
           {source && (
-            <button
+            <Button
               onClick={() => setShowSource((v) => !v)}
-              className="hover:text-muted"
+              className="!text-[11px]"
             >
               {showSource ? "hide session" : "view session"}
-            </button>
+            </Button>
           )}
         </div>
 
@@ -153,20 +154,23 @@ export function SegmentationReview({
             {drafts.length} gem{drafts.length === 1 ? "" : "s"}
           </span>
           <div className="flex items-center gap-4">
-            <button
+            <Button
+              variant="ghost"
+              size="md"
               onClick={onDone}
               disabled={saving}
-              className="text-sm text-faint transition-colors hover:text-muted disabled:opacity-50"
             >
               {none ? "Leave whole" : "Not now"}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="solid"
+              size="md"
               onClick={save}
               disabled={saving}
-              className="rounded-lg bg-foreground px-5 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+              pending={saving}
             >
               {saving ? "Saving…" : none ? "Done" : "Save gems"}
-            </button>
+            </Button>
           </div>
         </div>
       </motion.div>

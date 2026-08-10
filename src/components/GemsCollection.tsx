@@ -15,6 +15,7 @@ import {
 import { relativeTime } from "@/lib/time";
 import { EditableSnippet } from "./EditableSnippet";
 import { PromotionOverlay } from "./PromotionOverlay";
+import { Button } from "./ui/Button";
 
 /**
  * The gem library (spec §3) — every snippet extracted from every session, flat
@@ -114,12 +115,12 @@ export function GemsCollection() {
 
       {archived.length > 0 && (
         <div className="mt-10">
-          <button
+          <Button
             onClick={() => setShowArchived((v) => !v)}
-            className="text-[11px] text-faint transition-colors hover:text-muted"
+            className="!text-[11px]"
           >
             {showArchived ? "hide" : "show"} {archived.length} archived
-          </button>
+          </Button>
           {showArchived && (
             <div className="mt-4 flex flex-col gap-3">
               {archived.map((s) => (
@@ -137,12 +138,12 @@ export function GemsCollection() {
                       {s.content}
                     </p>
                   </div>
-                  <button
+                  <Button
                     onClick={() => archive.mutate({ id: s.id, archived: false })}
-                    className="shrink-0 text-[11px] text-muted hover:text-foreground"
+                    className="shrink-0 !text-[11px]"
                   >
                     restore
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
@@ -196,12 +197,12 @@ function Gem({
         )}
         <div className="flex items-center gap-3 text-[11px] text-faint">
           <span>{relativeTime(snippet.createdAt)}</span>
-          <button
+          <Button
             onClick={onArchive}
-            className="opacity-0 transition-opacity hover:text-muted group-hover:opacity-100"
+            className="opacity-0 group-hover:opacity-100"
           >
             archive
-          </button>
+          </Button>
         </div>
       </div>
       <EditableSnippet
@@ -210,13 +211,15 @@ function Gem({
         textClassName="text-[15px] leading-relaxed text-foreground"
       />
       <div className="mt-3 flex justify-end">
-        <button
+        <Button
+          variant="subtle"
           onClick={onStartPiece}
           disabled={starting}
-          className="rounded-full border border-border px-3 py-1 text-[11px] text-muted opacity-0 transition-all hover:border-accent hover:text-foreground disabled:opacity-50 group-hover:opacity-100"
+          pending={starting}
+          className="opacity-0 group-hover:opacity-100 !text-[11px]"
         >
           {starting ? "Starting…" : "Start a piece from this →"}
-        </button>
+        </Button>
       </div>
     </motion.article>
   );

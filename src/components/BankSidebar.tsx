@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { updateProjectSnippet, updateSnippet } from "@/lib/api";
 import type { ProjectSnippetDTO } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
 import { EditableSnippet } from "./EditableSnippet";
 
 function BankItem({
@@ -53,14 +54,14 @@ function BankItem({
     >
       <div className="flex items-start gap-1.5 px-2.5 py-2">
         {draggable && (
-          <button
+          <Button
             {...listeners}
             {...attributes}
-            className="mt-0.5 cursor-grab text-faint hover:text-muted active:cursor-grabbing"
+            className="mt-0.5 !cursor-grab !text-faint active:!cursor-grabbing"
             aria-label="Drag onto a block"
           >
             ⠿
-          </button>
+          </Button>
         )}
         <div className="min-w-0 flex-1">
           {ps.snippet.label && (
@@ -75,22 +76,23 @@ function BankItem({
               textClassName="text-xs leading-snug text-muted"
             />
           ) : (
-            <button
+            <Button
               onClick={() => setExpanded((v) => !v)}
               className={`block w-full text-left ${expanded ? "" : "line-clamp-3"}`}
               title={expanded ? "Click to collapse" : "Click to expand"}
             >
               {ps.snippet.content}
-            </button>
+            </Button>
           )}
           <div className="mt-1.5 flex justify-end">
-            <button
+            <Button
               onClick={() => setIncluded.mutate(ps.included ? false : true)}
               disabled={setIncluded.isPending}
-              className="text-[10px] text-faint transition-colors hover:text-muted disabled:opacity-50"
+              pending={setIncluded.isPending}
+              className="!text-[10px]"
             >
               {ps.included ? "set aside" : "bring back"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

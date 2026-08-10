@@ -339,6 +339,20 @@ export async function saveDraft(projectId: string, draft: string): Promise<void>
   if (!res.ok) throw new Error("Failed to save draft");
 }
 
+// The piece's glanceable title (spec §8). Defaults to "My piece #N" at creation
+// and is renamed by the writer.
+export async function saveProjectTitle(
+  projectId: string,
+  title: string,
+): Promise<void> {
+  const res = await fetch(`/api/projects/${projectId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  if (!res.ok) throw new Error("Failed to save title");
+}
+
 export async function composeDraft(
   projectId: string,
 ): Promise<{ draft: string }> {

@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import type { BlockDTO } from "@/lib/types";
 import { EditableSnippet } from "../EditableSnippet";
+import { Button } from "../ui/Button";
 
 export function ArchitectMode({
   projectId,
@@ -109,12 +110,14 @@ export function ArchitectMode({
           placeholder="e.g. intro with the anecdote from university"
           className="flex-1 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-foreground placeholder:text-faint focus:outline-none"
         />
-        <button
+        <Button
+          variant="subtle"
+          size="md"
           onClick={submitNew}
-          className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted transition-colors hover:text-foreground"
+          className="!px-4 !py-2.5"
         >
           Add block
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -228,14 +231,14 @@ function BlockCard({
       }`}
     >
       <div className="flex items-start gap-2">
-        <button
+        <Button
           {...attributes}
           {...listeners}
-          className="mt-0.5 cursor-grab text-faint hover:text-muted active:cursor-grabbing"
+          className="mt-0.5 !cursor-grab active:cursor-grabbing"
           aria-label="Drag to reorder"
         >
           ⠿
-        </button>
+        </Button>
 
         <div className="min-w-0 flex-1">
           {editingLabel ? (
@@ -253,12 +256,12 @@ function BlockCard({
               className="w-full rounded border border-border bg-background px-2 py-1 text-sm text-foreground focus:outline-none"
             />
           ) : (
-            <button
+            <Button
               onClick={() => setEditingLabel(true)}
-              className="text-left text-sm font-medium text-foreground"
+              className="!justify-start text-left !text-sm !text-foreground"
             >
               {block.label}
-            </button>
+            </Button>
           )}
 
           {block.gap && (
@@ -302,26 +305,24 @@ function BlockCard({
                 className="w-full resize-none rounded-md border border-border bg-background px-3 py-2 text-[13px] leading-relaxed text-foreground placeholder:text-faint focus:outline-none"
               />
               <div className="mt-1 flex items-center gap-3 text-[11px]">
-                <button
+                <Button
                   onClick={() => {
                     const c = draft.trim();
                     if (c) write.mutate(c);
                     setDraft("");
                     setWriting(false);
                   }}
-                  className="text-muted hover:text-foreground"
                 >
                   Save as snippet
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => {
                     setDraft("");
                     setWriting(false);
                   }}
-                  className="text-faint hover:text-muted"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
@@ -329,24 +330,24 @@ function BlockCard({
               {block.snippets.length > 0
                 ? "Drag another snippet here, or "
                 : "Drag a snippet here, or "}
-              <button
+              <Button
                 onClick={() => setWriting(true)}
-                className="underline decoration-dotted hover:text-muted"
+                className="!px-0 !py-0 underline decoration-dotted"
               >
                 write new copy
-              </button>
+              </Button>
               .
             </div>
           )}
         </div>
 
-        <button
+        <Button
           onClick={() => remove.mutate()}
-          className="text-faint transition-colors hover:text-rose-400"
+          className="hover:!text-rose-400"
           aria-label="Delete block"
         >
           ×
-        </button>
+        </Button>
       </div>
     </article>
   );
@@ -379,14 +380,14 @@ function SnippetRow({
       style={style}
       className="flex items-start gap-2 rounded-md border-l-2 border-emerald-500 bg-background px-3 py-2"
     >
-      <button
+      <Button
         {...attributes}
         {...listeners}
-        className="mt-0.5 cursor-grab text-xs text-faint hover:text-muted active:cursor-grabbing"
+        className="mt-0.5 !cursor-grab !text-xs active:cursor-grabbing"
         aria-label="Drag to reorder snippet"
       >
         ⠿
-      </button>
+      </Button>
       <div className="min-w-0 flex-1">
         {snippet.label && (
           <div className="mb-1 text-[11px] uppercase tracking-wider text-faint">
@@ -398,12 +399,12 @@ function SnippetRow({
           onSave={onEdit}
           textClassName="text-[13px] leading-snug text-muted"
         />
-        <button
+        <Button
           onClick={onRemove}
-          className="mt-1 text-[11px] text-faint hover:text-muted"
+          className="mt-1 !text-[11px]"
         >
           remove
-        </button>
+        </Button>
       </div>
     </div>
   );

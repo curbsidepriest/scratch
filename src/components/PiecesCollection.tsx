@@ -3,9 +3,10 @@
 import { motion } from "motion/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { deleteProject, fetchProjects } from "@/lib/api";
+import { deleteProject, fetchProjects, saveProjectTitle } from "@/lib/api";
 import { relativeTime } from "@/lib/time";
 import { DeleteControl } from "./DeleteControl";
+import { EditableTitle } from "./EditableTitle";
 
 /**
  * The collection of pieces — the payoff surface. This is ultimately what the
@@ -20,6 +21,11 @@ export function PiecesCollection() {
   });
   const remove = useMutation({
     mutationFn: (id: string) => deleteProject(id),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+  });
+  const rename = useMutation({
+    mutationFn: (a: { id: string; title: string }) =>
+      saveProjectTitle(a.id, a.title),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
   });
 
@@ -65,9 +71,17 @@ export function PiecesCollection() {
                 href={`/project/${p.id}`}
                 className="flex h-full flex-col justify-between rounded-xl border border-border bg-surface p-5 transition-colors hover:border-accent/50"
               >
-                <p className="pr-14 text-[17px] leading-snug text-foreground">
-                  {p.title || p.phrase}
-                </p>
+                <div className="pr-14">
+                  <EditableTitle
+                    value={p.title}
+                    placeholder="Untitled piece"
+                    onSave={(title) => rename.mutateAsync({ id: p.id, title })}
+                    className="text-[17px] font-medium leading-snug"
+                  />
+                  <p className="mt-1.5 line-clamp-3 pl-1.5 text-[13px] leading-relaxed text-muted">
+                    {p.phrase}
+                  </p>
+                </div>
                 <div className="mt-6 flex items-center gap-2 text-xs text-faint">
                   <span>{p.snippetCount} snippet{p.snippetCount === 1 ? "" : "s"}</span>
                   <span aria-hidden>·</span>

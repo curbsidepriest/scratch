@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { fetchRelevant, promoteThroughline } from "@/lib/api";
+import { Button } from "@/components/ui/Button";
 
 function excerpt(text: string, max = 120): string {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -105,11 +106,11 @@ export function PromotionOverlay({
           {all.map((s) => {
             const on = kept.has(s.id);
             return (
-              <button
+              <Button
                 key={s.id}
-                type="button"
+                variant="ghost"
                 onClick={() => toggle(s.id)}
-                className={`rounded-lg border px-4 py-3 text-left transition-colors ${
+                className={`!rounded-lg border !px-4 !py-3 text-left ${
                   on ? "border-accent/40 bg-background" : "border-border bg-transparent opacity-60"
                 }`}
               >
@@ -138,7 +139,7 @@ export function PromotionOverlay({
                     )}
                   </span>
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -148,20 +149,23 @@ export function PromotionOverlay({
             {kept.size} snippet{kept.size === 1 ? "" : "s"} coming with it
           </span>
           <div className="flex items-center gap-4">
-            <button
+            <Button
+              variant="ghost"
+              size="md"
               onClick={onCancel}
               disabled={creating}
-              className="text-sm text-faint transition-colors hover:text-muted disabled:opacity-50"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="solid"
+              size="md"
               onClick={create}
               disabled={creating || isLoading}
-              className="rounded-lg bg-foreground px-5 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+              pending={creating}
             >
               {creating ? "Creating…" : "Develop this"}
-            </button>
+            </Button>
           </div>
         </div>
       </motion.div>

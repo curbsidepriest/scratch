@@ -55,8 +55,15 @@ export async function POST(
   });
 
   const project = await prisma.$transaction(async (tx) => {
+    // Every piece opens with a glanceable placeholder title the writer renames
+    // (spec §8): "My piece #N", numbered by how many pieces they already have.
+    const priorCount = await tx.project.count({ where: { userId } });
     const created = await tx.project.create({
-      data: { userId, throughlineId: id },
+      data: {
+        userId,
+        throughlineId: id,
+        title: `My piece #${priorCount + 1}`,
+      },
     });
     if (valid.length > 0) {
       await tx.projectSnippet.createMany({

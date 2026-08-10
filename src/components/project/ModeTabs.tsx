@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "../ui/Button";
+
 export type Mode = "architect" | "editor";
 
 const MODES: { key: Mode; label: string; hint: string }[] = [
@@ -18,14 +20,13 @@ export function ModeTabs({
   return (
     <div className="flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
       {MODES.map((m) => (
-        <button
+        <Button
           key={m.key}
+          size="md"
           onClick={() => onChange(m.key)}
-          className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-            active === m.key
-              ? "bg-foreground text-background"
-              : "text-muted hover:text-foreground"
-          }`}
+          className={
+            active === m.key ? "!bg-foreground !text-background" : ""
+          }
         >
           {m.label}
           <span
@@ -35,7 +36,7 @@ export function ModeTabs({
           >
             {m.hint}
           </span>
-        </button>
+        </Button>
       ))}
     </div>
   );

@@ -26,6 +26,7 @@ import { SegmentationReview } from "./SegmentationReview";
 import { Onboarding } from "./Onboarding";
 import { StreakBanner } from "./StreakBanner";
 import { computeStreak } from "@/lib/streak";
+import { Button } from "./ui/Button";
 
 const SCRATCHES_KEY = ["scratches"];
 const SPARK_KEY = ["spark"];
@@ -179,12 +180,13 @@ export function Scratchpad() {
           </Link>
           <span className="h-4 w-px bg-border" aria-hidden />
           {/* Actions — begin writing / start a piece. */}
-          <button
+          <Button
+            variant="subtle"
+            size="md"
             onClick={() => setStartingPiece((v) => !v)}
-            className="rounded-full border border-border px-3.5 py-1.5 text-xs text-muted transition-colors hover:border-accent hover:text-foreground"
           >
             Start a piece
-          </button>
+          </Button>
           <Link
             href="/dump"
             className="rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
@@ -220,18 +222,14 @@ export function Scratchpad() {
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-faint focus:outline-none"
           />
           <div className="mt-3 flex items-center gap-4">
-            <button
+            <Button
+              variant="solid"
+              size="md"
               onClick={() => void beginOwnPiece()}
-              className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
             >
               Pick snippets →
-            </button>
-            <button
-              onClick={() => setStartingPiece(false)}
-              className="text-xs text-faint transition-colors hover:text-muted"
-            >
-              Cancel
-            </button>
+            </Button>
+            <Button onClick={() => setStartingPiece(false)}>Cancel</Button>
           </div>
         </div>
       )}
@@ -252,17 +250,16 @@ export function Scratchpad() {
 
         {/* Manual trigger — ask the Ranker to look on demand. */}
         <div className="mt-3 flex items-center gap-3 text-xs text-faint">
-          <button
+          <Button
             onClick={() => findSpark.mutate()}
-            disabled={findSpark.isPending}
-            className="transition-colors hover:text-foreground disabled:opacity-50"
+            pending={findSpark.isPending}
           >
             {findSpark.isPending
               ? "Looking for a thread…"
               : spark
                 ? "Look again"
                 : "Look for a spark"}
-          </button>
+          </Button>
           {sparkNote && !findSpark.isPending && (
             <span className="text-muted">{sparkNote}</span>
           )}

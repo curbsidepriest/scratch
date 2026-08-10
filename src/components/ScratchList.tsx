@@ -7,6 +7,7 @@ import { relativeTime } from "@/lib/time";
 import { deleteScratch, setSnippetArchived, updateSnippet } from "@/lib/api";
 import { EditableSnippet } from "./EditableSnippet";
 import { DeleteControl } from "./DeleteControl";
+import { Button } from "./ui/Button";
 
 const MODE_LABELS: Record<string, string> = {
   dump: "dump",
@@ -56,9 +57,9 @@ function ScratchCard({
   return (
     <article className="group rounded-lg border border-border bg-surface">
       <div className="flex w-full items-center gap-3 px-5 py-3">
-        <button
+        <Button
           onClick={() => setExpanded((v) => !v)}
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+          className="min-w-0 flex-1 justify-start gap-2 text-left"
         >
           <span className="text-faint">{expanded ? "▾" : "▸"}</span>
           <span className="min-w-0 flex-1 truncate text-[15px] text-foreground">
@@ -69,7 +70,7 @@ function ScratchCard({
             {" · "}
             {count > 0 ? `${count} gem${count === 1 ? "" : "s"}` : "no gems"}
           </span>
-        </button>
+        </Button>
         <DeleteControl
           onDelete={() => remove.mutateAsync()}
           idle="delete"
@@ -84,12 +85,9 @@ function ScratchCard({
               <p className="mb-3 whitespace-pre-wrap text-sm leading-relaxed text-muted">
                 {scratch.content}
               </p>
-              <button
-                onClick={() => onSegment(scratch.id)}
-                className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:text-foreground"
-              >
+              <Button variant="subtle" onClick={() => onSegment(scratch.id)}>
                 Find gems →
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -108,19 +106,13 @@ function ScratchCard({
               )}
 
               <div className="flex items-center gap-4 text-[11px] text-faint">
-                <button
-                  onClick={() => setShowSource((v) => !v)}
-                  className="hover:text-muted"
-                >
+                <Button onClick={() => setShowSource((v) => !v)}>
                   {showSource ? "hide source" : "view source"}
-                </button>
+                </Button>
                 {archived.length > 0 && (
-                  <button
-                    onClick={() => setShowArchived((v) => !v)}
-                    className="hover:text-muted"
-                  >
+                  <Button onClick={() => setShowArchived((v) => !v)}>
                     {showArchived ? "hide" : "show"} {archived.length} archived
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -146,12 +138,12 @@ function ScratchCard({
                         {s.content}
                       </p>
                     </div>
-                    <button
+                    <Button
                       onClick={() => archive.mutate({ id: s.id, archived: false })}
-                      className="shrink-0 text-[11px] text-muted hover:text-foreground"
+                      className="shrink-0 !text-[11px]"
                     >
                       unarchive
-                    </button>
+                    </Button>
                   </div>
                 ))}
             </div>
@@ -181,12 +173,12 @@ function SnippetBlock({
         ) : (
           <span />
         )}
-        <button
+        <Button
           onClick={onArchive}
-          className="text-[11px] text-faint opacity-0 transition-opacity hover:text-muted group-hover/snip:opacity-100"
+          className="opacity-0 group-hover/snip:opacity-100 !text-[11px]"
         >
           archive
-        </button>
+        </Button>
       </div>
       <EditableSnippet
         content={snippet.content}

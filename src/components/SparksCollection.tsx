@@ -8,6 +8,7 @@ import { useState } from "react";
 import { dismissThroughline, fetchSavedSparks } from "@/lib/api";
 import type { SparkDTO } from "@/lib/types";
 import { relativeTime } from "@/lib/time";
+import { Button } from "@/components/ui/Button";
 import { DeleteControl } from "./DeleteControl";
 import { PromotionOverlay } from "./PromotionOverlay";
 
@@ -111,9 +112,9 @@ function SparkCard({
 
   return (
     <article className="overflow-hidden rounded-xl border border-border bg-surface">
-      <button
+      <Button
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center gap-3 border-l-2 border-accent px-5 py-4 text-left"
+        className="flex w-full justify-start gap-3 border-l-2 border-accent !rounded-none !px-5 !py-4 text-left"
       >
         <span className="text-faint">{expanded ? "▾" : "▸"}</span>
         <span className="min-w-0 flex-1 text-[15px] leading-snug text-foreground">
@@ -123,7 +124,7 @@ function SparkCard({
           {count} snippet{count === 1 ? "" : "s"} · saved{" "}
           {relativeTime(spark.createdAt)}
         </span>
-      </button>
+      </Button>
 
       {expanded && (
         <div className="border-t border-border px-5 py-4">
@@ -139,12 +140,9 @@ function SparkCard({
           </ul>
 
           <div className="mt-5 flex items-center gap-4">
-            <button
-              onClick={onDevelop}
-              className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
-            >
+            <Button onClick={onDevelop} variant="solid" size="md">
               Develop this →
-            </button>
+            </Button>
             <DeleteControl onDelete={onDiscard} idle="discard" />
           </div>
         </div>

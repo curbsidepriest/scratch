@@ -3,6 +3,7 @@
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { motion } from "motion/react";
 import { Wordmark } from "./Wordmark";
+import { Button } from "./ui/Button";
 
 // The public front door. Signed-out visitors land here; signing in swaps them
 // into the Scratchpad. Restraint is still the aesthetic (spec §4) — crafted and
@@ -37,14 +38,14 @@ export function Landing() {
         <Wordmark />
         <nav className="flex items-center gap-1 sm:gap-2">
           <SignInButton mode="modal">
-            <button className="rounded-full px-4 py-2 text-sm font-medium text-muted transition-colors hover:text-foreground">
+            <Button size="md">
               Sign in
-            </button>
+            </Button>
           </SignInButton>
           <SignUpButton mode="modal">
-            <button className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background shadow-sm transition-transform hover:-translate-y-0.5">
+            <Button variant="solid" size="md">
               Get started
-            </button>
+            </Button>
           </SignUpButton>
         </nav>
       </header>
@@ -87,14 +88,18 @@ export function Landing() {
           className="mt-9 flex flex-col items-center gap-3 sm:flex-row"
         >
           <SignUpButton mode="modal">
-            <button className="rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background shadow-sm transition-transform hover:-translate-y-0.5">
+            <Button
+              variant="solid"
+              size="md"
+              className="!px-6 !py-3 !font-semibold"
+            >
               Start writing — it&apos;s free
-            </button>
+            </Button>
           </SignUpButton>
           <SignInButton mode="modal">
-            <button className="rounded-full px-6 py-3 text-sm font-semibold text-muted transition-colors hover:text-foreground">
+            <Button size="md" className="!px-6 !py-3 !font-semibold">
               I already have an account
-            </button>
+            </Button>
           </SignInButton>
         </motion.div>
 
