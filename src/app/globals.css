@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
-/* Restraint is the aesthetic (spec §4). A calm, papery neutral palette. */
+/* Restraint is the aesthetic (spec §4). A calm, papery neutral palette, warmed
+   by a single accent: ember. The whole product is a forge metaphor — gems,
+   sparks, the anvil, "strike while the iron's hot" — so the one colour we spend
+   is the colour of heat. It appears sparingly: the streak flame, a surfacing
+   spark, a piece cooling on the anvil, and small section marks. Everything else
+   stays neutral so the ember always means something. */
 :root {
   --background: #fafaf9; /* warm near-white */
   --foreground: #1c1917; /* stone-900 */
@@ -8,7 +13,19 @@
   --faint: #a8a29e; /* stone-400, hints */
   --border: #e7e5e4; /* stone-200 */
   --surface: #ffffff; /* raised cards */
-  --accent: #57534e; /* stone-600, quiet emphasis */
+  --accent: #57534e; /* stone-600, quiet neutral emphasis */
+
+  /* Ember — the single warm accent. */
+  --ember: #ea580c; /* orange-600, ember text/marks */
+  --ember-bright: #f97316; /* orange-500, ember fills */
+  --ember-soft: #fdba74; /* orange-300, soft borders/glows */
+
+  /* Card elevation — a soft, warm-tinted shadow so surfaces sit *on* the
+     paper rather than being drawn as outlined boxes. */
+  --elev-rest: 0 1px 2px -1px rgb(28 25 23 / 0.06),
+    0 3px 8px -3px rgb(28 25 23 / 0.05);
+  --elev-hover: 0 2px 4px -1px rgb(28 25 23 / 0.08),
+    0 10px 24px -8px rgb(28 25 23 / 0.12);
 }
 
 @theme inline {
@@ -19,6 +36,9 @@
   --color-border: var(--border);
   --color-surface: var(--surface);
   --color-accent: var(--accent);
+  --color-ember: var(--ember);
+  --color-ember-bright: var(--ember-bright);
+  --color-ember-soft: var(--ember-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -32,6 +52,14 @@
     --border: #292524; /* stone-800 */
     --surface: #1c1917; /* stone-900 */
     --accent: #d6d3d1; /* stone-300 */
+
+    --ember: #fb923c; /* orange-400, brighter on dark */
+    --ember-bright: #f97316; /* orange-500 */
+    --ember-soft: #9a3412; /* orange-800, soft borders/glows */
+
+    --elev-rest: 0 1px 2px -1px rgb(0 0 0 / 0.5), 0 3px 8px -3px rgb(0 0 0 / 0.4);
+    --elev-hover: 0 2px 4px -1px rgb(0 0 0 / 0.55),
+      0 12px 28px -8px rgb(0 0 0 / 0.55);
   }
 }
 
@@ -39,4 +67,53 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  /* A barely-there warmth washing down from the top so the page reads as
+     lit paper, not a flat void. Fixed so it doesn't scroll away. */
+  background-image: radial-gradient(
+    120% 60% at 50% -10%,
+    rgb(249 115 22 / 0.05),
+    transparent 60%
+  );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-image: radial-gradient(
+      120% 60% at 50% -10%,
+      rgb(249 115 22 / 0.06),
+      transparent 55%
+    );
+  }
+}
+
+@layer components {
+  /* The one card treatment: a soft resting elevation that lifts a touch on
+     hover. Add `elev` to any bg-surface card so the interface stops reading as
+     a stack of outlined boxes. Pair with a border for crisp edges. */
+  .elev {
+    box-shadow: var(--elev-rest);
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.2s ease;
+  }
+  .elev-hover:hover {
+    box-shadow: var(--elev-hover);
+  }
+
+  /* A small ember tick that heads a section label — a spot of heat that gives
+     the eye an anchor and quietly ties every section to the forge theme. */
+  .ember-tick::before {
+    content: "";
+    display: inline-block;
+    width: 0.3rem;
+    height: 0.3rem;
+    margin-right: 0.5rem;
+    border-radius: 1px;
+    vertical-align: middle;
+    background: var(--ember-bright);
+    transform: rotate(45deg);
+  }
 }

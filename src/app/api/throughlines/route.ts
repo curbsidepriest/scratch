@@ -48,6 +48,7 @@ export async function POST(req: Request) {
       data: {
         userId,
         phrase: candidate.phrase.trim(),
+        title: candidate.title?.trim() || null,
         origin: "user",
         status: "draft",
         evidence: {

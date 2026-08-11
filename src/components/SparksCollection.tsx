@@ -49,8 +49,10 @@ export function SparksCollection() {
         >
           ← Scratch
         </Link>
-        <h1 className="mt-4 text-2xl text-foreground">Sparks</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+          Sparks
+        </h1>
+        <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted">
           Threads you&apos;ve set aside. Come back and develop one when it&apos;s
           ready.
         </p>
@@ -111,15 +113,15 @@ function SparkCard({
   const count = spark.evidence.length;
 
   return (
-    <article className="overflow-hidden rounded-xl border border-border bg-surface">
+    <article className="elev elev-hover overflow-hidden rounded-xl border border-border bg-surface">
       <Button
         onClick={() => setExpanded((v) => !v)}
         press={false}
-        className="flex w-full justify-start gap-3 border-l-2 border-accent !rounded-none !px-5 !py-4 text-left"
+        className="flex w-full justify-start gap-3 border-l-2 border-ember-bright/70 !rounded-none !px-5 !py-4 text-left"
       >
-        <span className="text-faint">{expanded ? "▾" : "▸"}</span>
-        <span className="min-w-0 flex-1 text-[15px] leading-snug text-foreground">
-          {spark.phrase}
+        <span className="text-ember/70">{expanded ? "▾" : "▸"}</span>
+        <span className="min-w-0 flex-1 truncate text-[15px] font-medium leading-snug text-foreground">
+          {spark.title ?? spark.phrase}
         </span>
         <span className="shrink-0 text-xs text-faint">
           {count} snippet{count === 1 ? "" : "s"} · saved{" "}
@@ -129,6 +131,11 @@ function SparkCard({
 
       {expanded && (
         <div className="border-t border-border px-5 py-4">
+          {/* The full territory phrase — the sentence the short title stands in
+              for — shown once opened. */}
+          <p className="mb-4 text-[15px] leading-relaxed text-foreground">
+            {spark.phrase}
+          </p>
           <ul className="flex flex-col gap-2.5">
             {spark.evidence.map((e) => (
               <li key={e.id} className="text-sm">

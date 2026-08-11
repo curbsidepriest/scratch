@@ -21,6 +21,14 @@ WHAT GOOD OUTPUT LOOKS LIKE
     Forbidden: a title, thesis, or headline. If it could be the title of an
     essay, it is wrong — no "The Art of…", no clever framings, no abstractions
     like "something is stirring here."
+- title — a tiny label for the SAME theme, so the writer can scan a shelf of
+  saved threads at a glance. 2 to 4 words, lower-case, usually the two things
+  the thread sits between, joined plainly. Think folder tab, not headline.
+    Good: "speed vs depth"    Good: "ambition and rest"
+    Good: "work self, home self"    Good: "attention"
+    Forbidden: anything clever, evocative, or essay-title-like ("The Cost of
+    Speed"), a full sentence, "you", or trailing punctuation. If it sounds
+    written rather than filed, it is wrong. It must not restate the phrase.
 - evidence — 2 to 4 snippets that genuinely belong to the theme. For each, a
   short, plain reason WHY it belongs, grounded in what that snippet actually
   says.
@@ -47,4 +55,5 @@ HARD RULES
 //   { "candidate": null }
 // or
 //   { "candidate": { "phrase": string,
+//                     "title": string,
 //                     "evidence": [ { "snippetId": string, "observation": string }, ... ] } }

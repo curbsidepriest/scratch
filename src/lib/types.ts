@@ -41,10 +41,15 @@ export interface SparkEvidenceDTO {
   snippet: { id: string; content: string };
 }
 
-/** A surfaced through-line (the "spark"). `phrase` is territory, not a title. */
+/**
+ * A surfaced through-line (the "spark"). `phrase` is territory, not a title;
+ * `title` is a tiny glanceable label for the same territory (may be null for
+ * user-typed or pre-existing through-lines).
+ */
 export interface SparkDTO {
   id: string;
   phrase: string;
+  title: string | null;
   origin: string;
   createdAt: string;
   evidence: SparkEvidenceDTO[];

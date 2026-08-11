@@ -20,7 +20,7 @@ function ScratchCard({
   onSegment,
 }: {
   scratch: ScratchDTO;
-  onSegment: (id: string) => void;
+  onSegment: (id: string) => void | Promise<void>;
 }) {
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
@@ -55,7 +55,7 @@ function ScratchCard({
   const count = scratch.snippets.length;
 
   return (
-    <article className="group rounded-lg border border-border bg-surface">
+    <article className="elev elev-hover group rounded-xl border border-border bg-surface">
       <div className="flex w-full items-center gap-3 px-5 py-3">
         <Button
           onClick={() => setExpanded((v) => !v)}
@@ -195,7 +195,7 @@ export function ScratchList({
   onSegment,
 }: {
   scratches: ScratchDTO[];
-  onSegment: (id: string) => void;
+  onSegment: (id: string) => void | Promise<void>;
 }) {
   if (scratches.length === 0) {
     return (

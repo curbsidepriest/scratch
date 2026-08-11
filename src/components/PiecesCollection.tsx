@@ -9,6 +9,7 @@ import { countdown } from "@/lib/anvil";
 import type { ProjectSummaryDTO } from "@/lib/types";
 import { DeleteControl } from "./DeleteControl";
 import { EditableTitle } from "./EditableTitle";
+import { Flame } from "./ui/Flame";
 
 /**
  * The collection of pieces — the payoff surface. This is ultimately what the
@@ -44,8 +45,10 @@ export function PiecesCollection() {
         >
           ← Scratch
         </Link>
-        <h1 className="mt-4 text-2xl text-foreground">Pieces</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+          Pieces
+        </h1>
+        <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted">
           Everything you&apos;ve started shaping. Pick one up where you left it.
         </p>
       </header>
@@ -133,7 +136,7 @@ function PieceCard({
     >
       <Link
         href={`/project/${p.id}`}
-        className={`flex h-full flex-col justify-between rounded-xl border bg-surface p-5 transition-colors hover:border-accent/50 ${
+        className={`elev elev-hover flex h-full flex-col justify-between rounded-xl border bg-surface p-5 transition-colors hover:border-accent/50 ${
           finished ? "border-border/70" : "border-border"
         }`}
       >
@@ -152,9 +155,7 @@ function PieceCard({
                     : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
                 }`}
               >
-                <span aria-hidden className={c.state === "cold" ? "grayscale" : ""}>
-                  🔥
-                </span>
+                <Flame size={12} strokeWidth={1.8} />
                 {c.label}
               </span>
             )}

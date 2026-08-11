@@ -64,6 +64,10 @@ model Throughline {
   id        String   @id @default(cuid())
   userId    String   @map("user_id") // owning Clerk user
   phrase    String
+  // A short, glanceable label for the thread (2–4 words, e.g. "speed vs depth").
+  // Not a title/headline — just enough to scan the Sparks library at a glance.
+  // Nullable: user-typed through-lines and pre-existing rows have none.
+  title     String?
   origin    String // "ranker" | "user"
   status    String   @default("surfaced") // "surfaced" | "dismissed" | "promoted"
   createdAt DateTime @default(now()) @map("created_at")

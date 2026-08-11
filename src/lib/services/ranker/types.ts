@@ -22,9 +22,14 @@ export interface RankerEvidence {
  * A candidate through-line. `phrase` names territory (e.g. "how you keep
  * setting speed against depth"), NEVER a title or thesis. If it reads like a
  * headline, it is wrong (spec §5).
+ *
+ * `title` is a tiny, glanceable tag for the same territory (2–4 words, e.g.
+ * "speed vs depth") — a folder label so the Sparks library can be scanned, not
+ * read. Deliberately plain: not creative, not directive, never a headline.
  */
 export interface RankerCandidate {
   phrase: string;
+  title: string;
   evidence: RankerEvidence[];
 }
 
