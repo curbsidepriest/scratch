@@ -86,15 +86,20 @@ export class StubRankerService implements RankerService {
     );
     const [a, b] = terms;
     let phrase: string;
+    let title: string;
     if (a && b) {
       phrase = `You're starting from ${a}, and there's something in how it meets ${b} — follow that.`;
+      title = `${a} and ${b}`;
     } else if (a) {
       phrase = `You're starting from ${a}. See where it wants to go.`;
+      title = a;
     } else {
       phrase = "You're starting from this line. See what it opens up.";
+      title = "a new thread";
     }
     return {
       phrase,
+      title,
       evidence: [
         { snippetId: seed.id, observation: "the gem you're building this piece around" },
       ],
@@ -168,16 +173,22 @@ export class StubRankerService implements RankerService {
     );
 
     // Territory phrase — always an observation about what the writer keeps
-    // doing, never a title. (Every branch contains "you".)
+    // doing, never a title. (Every branch contains "you".) The title is the
+    // same territory as a tiny folder label, so the Sparks shelf is scannable.
     let phrase: string;
+    let title: string;
     if (partner && contrasts) {
       phrase = `There's something here about how you keep setting ${top.term} against ${partner.term}.`;
+      title = `${top.term} vs ${partner.term}`;
     } else if (partner) {
       phrase = `You keep circling ${top.term} and ${partner.term} together.`;
+      title = `${top.term} and ${partner.term}`;
     } else if (contrasts) {
       phrase = `You keep pulling at ${top.term} from opposite sides.`;
+      title = top.term;
     } else {
       phrase = `You keep coming back to ${top.term}, and it keeps shifting.`;
+      title = top.term;
     }
 
     // Evidence — 1..3 observations, each pointing at a specific snippet, no
@@ -209,7 +220,7 @@ export class StubRankerService implements RankerService {
     const first = threadSnips[0];
     push(first.id, "This is where the thread first shows up.");
 
-    return { phrase, evidence };
+    return { phrase, title, evidence };
   }
 
   // Relevance for the promotion pull-in (spec §6). Anchored on the snippets the

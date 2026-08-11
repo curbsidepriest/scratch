@@ -22,9 +22,10 @@ const CANDIDATE_SCHEMA = {
         {
           type: "object",
           additionalProperties: false,
-          required: ["phrase", "evidence"],
+          required: ["phrase", "title", "evidence"],
           properties: {
             phrase: { type: "string" },
+            title: { type: "string" },
             evidence: {
               type: "array",
               items: {
@@ -69,9 +70,10 @@ const RELEVANCE_SCHEMA = {
 const SEED_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["phrase", "evidence"],
+  required: ["phrase", "title", "evidence"],
   properties: {
     phrase: { type: "string" },
+    title: { type: "string" },
     evidence: {
       type: "array",
       items: {
@@ -103,9 +105,11 @@ export class AnthropicRankerService implements RankerService {
         "real theme forming across them.\n\n" +
         "Return JSON. If nothing genuine stands out, return {\"candidate\": null}. " +
         "When a real thread is forming, return {\"candidate\": {\"phrase\": ..., " +
-        "\"evidence\": [{\"snippetId\": ..., \"observation\": ...}, ...]}}:\n" +
+        "\"title\": ..., \"evidence\": [{\"snippetId\": ..., \"observation\": ...}, ...]}}:\n" +
         "- phrase: name the theme plainly and concretely, as in your instructions " +
         "(the two things it circles) — never a title.\n" +
+        "- title: a 2-4 word lower-case tag for that same theme (a folder label, " +
+        "e.g. \"speed vs depth\"), as in your instructions — never a headline, never a sentence.\n" +
         "- evidence: 2 to 4 items, each citing a real [id] below with a short, " +
         "grounded reason it belongs. Do not invent recurrence or contrast that " +
         "isn't actually in these snippets.\n\n" +
@@ -129,9 +133,11 @@ export class AnthropicRankerService implements RankerService {
         "The writer has chosen ONE line as the seed of a new piece. Your job is " +
         "not to judge whether it's worth writing — they've decided that — but to " +
         "name the territory it opens, so a piece can grow around it.\n\n" +
-        "Return JSON { \"phrase\": ..., \"evidence\": [...] }:\n" +
+        "Return JSON { \"phrase\": ..., \"title\": ..., \"evidence\": [...] }:\n" +
         "- phrase: name the territory plainly and concretely, as in your " +
         "instructions — the question or tension this line opens up. Never a title.\n" +
+        "- title: a 2-4 word lower-case tag for that territory (a folder label, " +
+        "e.g. \"speed vs depth\"), as in your instructions — never a headline, never a sentence.\n" +
         "- evidence: exactly one item citing the seed's [id] below, with a short " +
         "grounded note on what it opens.\n\n" +
         renderSnippets([seed]),

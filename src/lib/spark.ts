@@ -19,6 +19,7 @@ export function serializeSpark(t: NonNullable<ActiveSpark>) {
   return {
     id: t.id,
     phrase: t.phrase,
+    title: t.title,
     origin: t.origin,
     createdAt: t.createdAt,
     evidence: t.evidence.map((e) => ({
@@ -99,6 +100,7 @@ export async function evaluateSpark(
     data: {
       userId,
       phrase: candidate.phrase,
+      title: candidate.title?.trim() || null,
       origin: "ranker",
       status: "surfaced",
       evidence: {

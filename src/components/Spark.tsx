@@ -38,7 +38,7 @@ export function Spark({
       <div className="border-l-2 border-ember-bright px-5 py-4">
         <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ember">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-ember-bright" />
-          a thread, maybe
+          {spark.title ?? "a thread, maybe"}
         </div>
 
         <p className="text-[17px] leading-relaxed text-foreground">
