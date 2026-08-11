@@ -86,8 +86,10 @@ export function GemsCollection() {
         >
           ← Scratch
         </Link>
-        <h1 className="mt-4 text-2xl text-foreground">Gems</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+          Gems
+        </h1>
+        <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted">
           The good lines, pulled out of your sessions. This is what the spark
           reads. Kept small on purpose — a real library, not everything you wrote.
         </p>
@@ -227,7 +229,7 @@ function Gem({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index * 0.03, 0.25), duration: 0.3 }}
-      className="group rounded-lg border border-border bg-surface p-4"
+      className="elev elev-hover group rounded-xl border border-border bg-surface p-4"
     >
       <div className="mb-1 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">

@@ -33,11 +33,11 @@ export function Spark({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="overflow-hidden rounded-xl border border-border bg-surface"
+      className="elev overflow-hidden rounded-xl border border-ember-soft/40 bg-gradient-to-br from-ember-bright/[0.05] to-surface"
     >
-      <div className="border-l-2 border-accent px-5 py-4">
-        <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-faint">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
+      <div className="border-l-2 border-ember-bright px-5 py-4">
+        <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ember">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-ember-bright" />
           a thread, maybe
         </div>
 

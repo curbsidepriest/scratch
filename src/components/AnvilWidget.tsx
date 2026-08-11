@@ -12,6 +12,7 @@ import {
 import { countdown, DAY_MS } from "@/lib/anvil";
 import type { ProjectSummaryDTO } from "@/lib/types";
 import { Button } from "./ui/Button";
+import { Flame } from "./ui/Flame";
 
 const PRESETS = [
   { label: "3 days", days: 3 },
@@ -93,9 +94,9 @@ export function AnvilWidget() {
   if (active.length === 0) return null;
 
   return (
-    <section className="mb-10 rounded-xl border border-border bg-surface">
+    <section className="elev mb-10 rounded-xl border border-border bg-surface">
       <div className="flex items-center justify-between gap-2 px-5 py-3">
-        <h2 className="text-[11px] uppercase tracking-wider text-faint">
+        <h2 className="ember-tick text-[11px] uppercase tracking-wider text-muted">
           On the anvil
         </h2>
         {candidates.length > 0 && (
@@ -185,8 +186,12 @@ function AnvilRow({
 
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3">
-      <span aria-hidden className={cold ? "grayscale" : ""}>
-        🔥
+      <span
+        aria-hidden
+        className={cold ? "text-faint" : "text-ember"}
+        title={cold ? "Cold — ship it or let it go" : "Hot on the anvil"}
+      >
+        <Flame size={16} strokeWidth={1.7} />
       </span>
       <Link
         href={`/project/${piece.id}`}

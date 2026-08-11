@@ -55,7 +55,7 @@ function ScratchCard({
   const count = scratch.snippets.length;
 
   return (
-    <article className="group rounded-lg border border-border bg-surface">
+    <article className="elev elev-hover group rounded-xl border border-border bg-surface">
       <div className="flex w-full items-center gap-3 px-5 py-3">
         <Button
           onClick={() => setExpanded((v) => !v)}

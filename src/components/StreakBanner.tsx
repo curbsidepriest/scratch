@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import type { DayCell, StreakInfo } from "@/lib/streak";
 import { Button } from "@/components/ui/Button";
+import { Flame } from "@/components/ui/Flame";
 
 function WeekStrip({ week }: { week: DayCell[] }) {
   return (
@@ -12,16 +13,16 @@ function WeekStrip({ week }: { week: DayCell[] }) {
       {week.map((d) => (
         <div key={d.key} className="flex flex-col items-center gap-1">
           <span
-            className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] ${
+            className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors ${
               d.written
-                ? "bg-orange-500 text-white"
+                ? "bg-ember-bright text-white shadow-[0_1px_4px_-1px_rgb(249_115_22/0.6)]"
                 : d.isToday
-                  ? "border border-dashed border-accent text-faint"
+                  ? "border border-dashed border-ember-soft text-faint"
                   : "border border-border text-faint"
             }`}
             title={d.key}
           >
-            {d.written ? "🔥" : ""}
+            {d.written && <Flame size={13} strokeWidth={1.8} />}
           </span>
           <span className={`text-[10px] ${d.isToday ? "text-foreground" : "text-faint"}`}>
             {d.label}
@@ -80,12 +81,14 @@ export function StreakBanner({
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-8 overflow-hidden rounded-2xl border border-orange-500/40 bg-gradient-to-br from-orange-500/[0.08] to-transparent"
+        className="mb-8 overflow-hidden rounded-2xl border border-ember-soft/50 bg-gradient-to-br from-ember-bright/[0.09] via-ember-bright/[0.03] to-transparent"
       >
         <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
-              <span className="text-2xl">🔥</span>
+            <h2 className="flex items-center gap-2.5 text-xl font-semibold tracking-tight text-foreground">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ember-bright/15 text-ember">
+                <Flame size={20} strokeWidth={1.7} />
+              </span>
               {streak > 0
                 ? `Keep your ${streak}-day streak alive`
                 : "Write today — start your streak"}
@@ -103,7 +106,7 @@ export function StreakBanner({
               onClick={onStart}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="rounded-full bg-foreground px-6 py-3.5 text-sm font-semibold text-background shadow-sm"
+              className="rounded-full bg-ember-bright px-6 py-3.5 text-sm font-semibold text-white shadow-[0_2px_10px_-2px_rgb(249_115_22/0.55)] transition-shadow hover:shadow-[0_4px_16px_-2px_rgb(249_115_22/0.6)]"
             >
               Write for 5 minutes →
             </motion.button>
@@ -121,11 +124,13 @@ export function StreakBanner({
   }
 
   return (
-    <section className="mb-8 rounded-2xl border border-border bg-surface">
+    <section className="elev mb-8 rounded-2xl border border-border bg-surface">
       <div className="flex items-center justify-between gap-4 p-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <span className="text-lg">🔥</span>
+            <span className="text-ember">
+              <Flame size={17} strokeWidth={1.7} />
+            </span>
             {streak > 1 ? `${streak}-day streak` : "You wrote today"}
             <span className="text-faint">· done for today</span>
             {best > streak && (

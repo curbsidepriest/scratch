@@ -28,6 +28,7 @@ import { Onboarding } from "./Onboarding";
 import { StreakBanner } from "./StreakBanner";
 import { computeStreak } from "@/lib/streak";
 import { Button } from "./ui/Button";
+import { Flame } from "./ui/Flame";
 
 const SCRATCHES_KEY = ["scratches"];
 const SPARK_KEY = ["spark"];
@@ -153,11 +154,11 @@ export function Scratchpad() {
                   }`
                 : "No streak yet — write today to start one"
             }
-            className={`flex items-center gap-1 text-xs font-medium tabular-nums ${
-              streak.writtenToday ? "text-orange-500" : "text-faint"
+            className={`flex items-center gap-1 text-xs font-medium tabular-nums transition-colors ${
+              streak.writtenToday ? "text-ember" : "text-faint"
             }`}
           >
-            <span className={streak.writtenToday ? "" : "grayscale"}>🔥</span>
+            <Flame size={14} strokeWidth={1.7} />
             {streak.streak}
           </span>
           {/* Library — navigation, set apart from the creative actions. */}
@@ -301,7 +302,7 @@ export function Scratchpad() {
 
       <section className="flex-1">
         <div className="mb-4 flex items-baseline justify-between">
-          <h2 className="text-[11px] uppercase tracking-wider text-faint">
+          <h2 className="ember-tick text-[11px] uppercase tracking-wider text-muted">
             Sessions
           </h2>
           <Link

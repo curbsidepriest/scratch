@@ -49,8 +49,10 @@ export function SparksCollection() {
         >
           ← Scratch
         </Link>
-        <h1 className="mt-4 text-2xl text-foreground">Sparks</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+          Sparks
+        </h1>
+        <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted">
           Threads you&apos;ve set aside. Come back and develop one when it&apos;s
           ready.
         </p>
@@ -111,13 +113,13 @@ function SparkCard({
   const count = spark.evidence.length;
 
   return (
-    <article className="overflow-hidden rounded-xl border border-border bg-surface">
+    <article className="elev elev-hover overflow-hidden rounded-xl border border-border bg-surface">
       <Button
         onClick={() => setExpanded((v) => !v)}
         press={false}
-        className="flex w-full justify-start gap-3 border-l-2 border-accent !rounded-none !px-5 !py-4 text-left"
+        className="flex w-full justify-start gap-3 border-l-2 border-ember-bright/70 !rounded-none !px-5 !py-4 text-left"
       >
-        <span className="text-faint">{expanded ? "▾" : "▸"}</span>
+        <span className="text-ember/70">{expanded ? "▾" : "▸"}</span>
         <span className="min-w-0 flex-1 text-[15px] leading-snug text-foreground">
           {spark.phrase}
         </span>
