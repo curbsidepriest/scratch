@@ -66,8 +66,20 @@ export function Composer({
         />
       </div>
       <div className="mt-2 flex items-center justify-between text-xs text-faint">
-        <span className="tabular-nums">
-          {count > 0 ? `${count} word${count === 1 ? "" : "s"}` : " "}
+        <span className="flex items-center gap-1.5 tabular-nums">
+          {busy ? (
+            <>
+              <span
+                className="h-3 w-3 animate-spin rounded-full border border-ember/40 border-t-ember"
+                aria-hidden
+              />
+              <span className="text-ember">capturing…</span>
+            </>
+          ) : count > 0 ? (
+            `${count} word${count === 1 ? "" : "s"}`
+          ) : (
+            " "
+          )}
         </span>
         <span aria-hidden className="flex items-center gap-1">
           <kbd className="rounded border border-border bg-surface px-1.5 py-0.5 font-sans text-[10px] leading-none text-muted shadow-[0_1px_0_var(--border)]">

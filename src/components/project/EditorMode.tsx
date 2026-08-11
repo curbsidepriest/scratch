@@ -115,7 +115,7 @@ export function EditorMode({
           >
             {composing ? "composing…" : "Compose from Architect"}
           </Button>
-          <Button onClick={() => void check()}>
+          <Button onClick={() => void check()} pending={checking}>
             {checking ? "checking…" : "Re-check"}
           </Button>
           <Button

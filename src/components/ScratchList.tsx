@@ -20,7 +20,7 @@ function ScratchCard({
   onSegment,
 }: {
   scratch: ScratchDTO;
-  onSegment: (id: string) => void;
+  onSegment: (id: string) => void | Promise<void>;
 }) {
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
@@ -195,7 +195,7 @@ export function ScratchList({
   onSegment,
 }: {
   scratches: ScratchDTO[];
-  onSegment: (id: string) => void;
+  onSegment: (id: string) => void | Promise<void>;
 }) {
   if (scratches.length === 0) {
     return (

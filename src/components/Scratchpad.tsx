@@ -204,7 +204,10 @@ export function Scratchpad() {
       )}
 
       <section className="mb-10">
-        <Composer onCapture={(content) => capture.mutate(content)} />
+        <Composer
+          onCapture={(content) => capture.mutate(content)}
+          busy={capture.isPending}
+        />
       </section>
 
       <AnvilWidget />
@@ -229,7 +232,7 @@ export function Scratchpad() {
             <Button
               variant="solid"
               size="md"
-              onClick={() => void beginOwnPiece()}
+              onClick={() => beginOwnPiece()}
             >
               Pick snippets →
             </Button>

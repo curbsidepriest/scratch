@@ -1,12 +1,18 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 
 /**
  * The one action primitive. Every clickable action uses this so the interface
  * feels haptic: an action reads as plain text at rest, gains a subtle surface on
  * hover (clearly clickable), presses in on click (active:scale), and can show a
  * quiet spinner while a slow action runs (`pending`) instead of feeling dead.
+ *
+ * Slow actions get instant feedback for free: if `onClick` returns a promise
+ * (an LLM call, a save), the button shows the spinner and disables itself the
+ * moment it's clicked, then re-enables when the promise settles. So the user
+ * always sees *something* happen immediately and can't fire the action twice.
+ * Pass `pending` explicitly to drive this from an external mutation instead.
  *
  * Variants:
  *   ghost  — inline text action; surface fades in on hover (the default).
@@ -103,20 +109,42 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       type = "button",
       className = "",
       children,
+      onClick,
       ...rest
     },
     ref,
   ) {
+    // Auto-pending: when onClick returns a promise, spin + lock until it settles.
+    const [autoPending, setAutoPending] = useState(false);
+    const mounted = useRef(true);
+    useEffect(() => () => {
+      mounted.current = false;
+    }, []);
+
+    const busy = pending || autoPending;
+
+    function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
+      if (busy) return; // guard against double-fire while an action is in flight
+      const result = onClick?.(e) as unknown;
+      if (result && typeof (result as { then?: unknown }).then === "function") {
+        setAutoPending(true);
+        Promise.resolve(result).finally(() => {
+          if (mounted.current) setAutoPending(false);
+        });
+      }
+    }
+
     return (
       <button
         ref={ref}
         type={type}
-        disabled={disabled || pending}
-        aria-busy={pending || undefined}
-        className={`${BASE} ${press ? PRESS : ""} ${VARIANTS[variant]} ${SIZES[size]} ${RADIUS[variant] ?? ""} ${pending ? "cursor-wait" : ""} ${className}`}
+        disabled={disabled || busy}
+        aria-busy={busy || undefined}
+        className={`${BASE} ${press ? PRESS : ""} ${VARIANTS[variant]} ${SIZES[size]} ${RADIUS[variant] ?? ""} ${busy ? "cursor-wait" : ""} ${className}`}
+        onClick={handleClick}
         {...rest}
       >
-        {pending && <Spinner />}
+        {busy && <Spinner />}
         {children}
       </button>
     );

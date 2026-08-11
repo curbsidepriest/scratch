@@ -324,10 +324,16 @@ function Running({
   const textValue = useRef("");
   textValue.current = text;
 
-  const finish = useCallback(() => {
+  const finish = useCallback(async () => {
     if (finished.current) return;
     finished.current = true;
-    onDone(textValue.current);
+    try {
+      // Returned to the Button so it spins + locks while the session is saved
+      // and segmented (an LLM round-trip) — no dead click, no double-submit.
+      await onDone(textValue.current);
+    } catch {
+      finished.current = false; // let the writer retry a failed save
+    }
   }, [onDone]);
 
   // Tick elapsed from the start time (drift-free). The goal is a SOFT signal —
