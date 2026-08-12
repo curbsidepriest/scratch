@@ -63,10 +63,20 @@
   }
 }
 
+html {
+  /* Stop iOS/Safari from silently inflating text in some blocks (the "font
+     sizes sometimes scale down, sometimes stay large" inconsistency on phones).
+     Keep every size exactly as authored. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Kill the grey flash when tapping buttons/links on touch devices. */
+  -webkit-tap-highlight-color: transparent;
   /* A barely-there warmth washing down from the top so the page reads as
      lit paper, not a flat void. Fixed so it doesn't scroll away. */
   background-image: radial-gradient(

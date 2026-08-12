@@ -114,12 +114,12 @@ function Segmented<T extends string | number>({
   render: (v: T) => string;
 }) {
   return (
-    <div className="inline-flex overflow-hidden rounded-lg border border-border">
+    <div className="flex w-full overflow-hidden rounded-lg border border-border sm:inline-flex sm:w-auto">
       {options.map((o) => (
         <Button
           key={String(o)}
           onClick={() => onChange(o)}
-          className={`!rounded-none px-5 py-2 text-sm ${
+          className={`flex-1 whitespace-nowrap !rounded-none px-3 py-2 text-sm sm:flex-none sm:px-5 ${
             value === o
               ? "!bg-foreground !text-background"
               : "bg-surface"
@@ -150,7 +150,7 @@ function ValuePicker({
 
   return (
     <div>
-      <div className="inline-flex overflow-hidden rounded-lg border border-border">
+      <div className="flex w-full overflow-hidden rounded-lg border border-border sm:inline-flex sm:w-auto">
         {presets.map((p) => {
           const on = !custom && value === p;
           return (
@@ -160,7 +160,7 @@ function ValuePicker({
                 setCustom(false);
                 onChange(p);
               }}
-              className={`!rounded-none px-5 py-2 text-sm ${
+              className={`flex-1 whitespace-nowrap !rounded-none px-3 py-2 text-sm sm:flex-none sm:px-5 ${
                 on
                   ? "!bg-foreground !text-background"
                   : "bg-surface"
@@ -172,7 +172,7 @@ function ValuePicker({
         })}
         <Button
           onClick={() => setCustom(true)}
-          className={`!rounded-none px-5 py-2 text-sm ${
+          className={`flex-1 whitespace-nowrap !rounded-none px-3 py-2 text-sm sm:flex-none sm:px-5 ${
             custom
               ? "!bg-foreground !text-background"
               : "bg-surface"
