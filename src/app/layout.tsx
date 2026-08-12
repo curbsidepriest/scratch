@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
@@ -17,6 +17,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Scratch",
   description: "A writing tool that helps you think, and never writes for you.",
+};
+
+// Explicit, phone-friendly viewport. width=device-width + initial-scale=1 so
+// layouts use real device width; cover the notch/safe areas.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0a09" },
+  ],
 };
 
 export default function RootLayout({

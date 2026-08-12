@@ -103,7 +103,7 @@ export function EditorMode({
   }
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col gap-6 lg:flex-row">
       <div className="min-w-0 flex-1">
         <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
           <h2 className="mr-auto text-[11px] uppercase tracking-wider text-faint">
@@ -181,7 +181,7 @@ export function EditorMode({
       </div>
 
       {showSnippets && (
-        <aside className="w-72 shrink-0">
+        <aside className="w-full shrink-0 lg:w-72">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[11px] uppercase tracking-wider text-faint">
               Snippets
@@ -222,7 +222,7 @@ export function EditorMode({
       )}
 
       {showFlags && (
-        <aside className="w-80 shrink-0">
+        <aside className="w-full shrink-0 lg:w-80">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[11px] uppercase tracking-wider text-faint">
               Flags {flags.length > 0 && `· ${flags.length}`}

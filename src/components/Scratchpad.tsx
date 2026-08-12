@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
-import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -19,7 +18,7 @@ import {
 import type { SegmentSuggestion } from "@/lib/types";
 import { AnvilWidget } from "./AnvilWidget";
 import { Composer } from "./Composer";
-import { Wordmark } from "./Wordmark";
+import { ScratchpadHeader } from "./ScratchpadHeader";
 import { ScratchList } from "./ScratchList";
 import { Spark } from "./Spark";
 import { PromotionOverlay } from "./PromotionOverlay";
@@ -28,7 +27,6 @@ import { Onboarding } from "./Onboarding";
 import { StreakBanner } from "./StreakBanner";
 import { computeStreak } from "@/lib/streak";
 import { Button } from "./ui/Button";
-import { Flame } from "./ui/Flame";
 
 const SCRATCHES_KEY = ["scratches"];
 const SPARK_KEY = ["spark"];
@@ -141,63 +139,10 @@ export function Scratchpad() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-10">
       <Onboarding />
-      <header className="mb-8 flex items-center justify-between gap-4">
-        <Wordmark />
-        <nav className="flex items-center gap-3">
-          {/* Permanent, minimal streak display — always here, orange once
-              you've written today, muted otherwise. */}
-          <span
-            title={
-              streak.streak > 0
-                ? `${streak.streak}-day writing streak${
-                    streak.best > streak.streak ? ` · best ${streak.best}` : ""
-                  }`
-                : "No streak yet — write today to start one"
-            }
-            className={`flex items-center gap-1 text-xs font-medium tabular-nums transition-colors ${
-              streak.writtenToday ? "text-ember" : "text-faint"
-            }`}
-          >
-            <Flame size={14} strokeWidth={1.7} />
-            {streak.streak}
-          </span>
-          {/* Library — navigation, set apart from the creative actions. */}
-          <Link
-            href="/gems"
-            className="text-xs text-faint transition-colors hover:text-foreground"
-          >
-            Gems
-          </Link>
-          <Link
-            href="/sparks"
-            className="text-xs text-faint transition-colors hover:text-foreground"
-          >
-            Sparks
-          </Link>
-          <Link
-            href="/pieces"
-            className="text-xs text-faint transition-colors hover:text-foreground"
-          >
-            Pieces
-          </Link>
-          <span className="h-4 w-px bg-border" aria-hidden />
-          {/* Actions — begin writing / start a piece. */}
-          <Button
-            variant="subtle"
-            size="md"
-            onClick={() => setStartingPiece((v) => !v)}
-          >
-            Start a piece
-          </Button>
-          <Link
-            href="/dump"
-            className="rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
-          >
-            Just write
-          </Link>
-          <UserButton />
-        </nav>
-      </header>
+      <ScratchpadHeader
+        streak={streak}
+        onStartPiece={() => setStartingPiece((v) => !v)}
+      />
 
       {!isLoading && (
         <StreakBanner info={streak} onStart={() => router.push("/dump?quick=1")} />
