@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import type { StreakInfo } from "@/lib/streak";
 import { Wordmark } from "./Wordmark";
@@ -20,6 +21,7 @@ export function ScratchpadHeader({
   streak: StreakInfo;
   onStartPiece: () => void;
 }) {
+  const router = useRouter();
   return (
     <header className="mb-8 flex flex-col gap-x-4 gap-y-3 sm:flex-row sm:items-center sm:justify-between">
       {/* Top cluster: wordmark + streak, with the account tucked to the far
@@ -73,15 +75,20 @@ export function ScratchpadHeader({
         {/* A hairline separates the library links from the actions on mobile,
             where they share a wrapped row. */}
         <span className="mx-0.5 h-4 w-px bg-border sm:hidden" aria-hidden />
+        {/* These two share one size — subtle "Start a piece" and the solid
+            "Just write" CTA — so they read as a matched pair. The transparent
+            border on the solid one matches the subtle one's border box exactly. */}
         <Button variant="subtle" size="md" onClick={onStartPiece}>
           Start a piece
         </Button>
-        <Link
-          href="/dump"
-          className="rounded-full bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-90"
+        <Button
+          variant="solid"
+          size="md"
+          className="border border-transparent"
+          onClick={() => router.push("/dump")}
         >
           Just write
-        </Link>
+        </Button>
         <span className="hidden sm:block">
           <UserButton />
         </span>
